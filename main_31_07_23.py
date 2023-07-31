@@ -3,7 +3,7 @@
 #padronizar com o outro código
 
 #Bibliotecas:
-from time import sleep
+from time import sleep, time
 from machine import Pin, PWM, ADC
 import onewire
 import ds18x20
@@ -15,7 +15,6 @@ def musicas(mus:str, obj):
         mus = [[294+587, 2], [370+784, 2], [466+1175, 2], [587+1568, 2],
                [784+2093, 2], [1175+2349, 2]]
 
-        
 
     if mus == "exit":
         mus = [[1568+784, 2], [1175+587, 2], [784+523, 2], [587+294, 2],
@@ -25,7 +24,7 @@ def musicas(mus:str, obj):
         obj.freq(nota[0])
         sleep(nota[1]/temp)
     return
-        
+
 def mod(a:int):
     if a < 0:
         return -a
@@ -36,7 +35,7 @@ def mudar(a:int, b:int):
         return b + 1
     if a < b:
         return b - 1
-    return b    
+    return b
 
 if __name__ == "__main__":
 #   ____        __ _       _      /\/|               
@@ -47,38 +46,45 @@ if __name__ == "__main__":
 #                             )_)                    
     
     ###Variáveis potencia:
-    h4 = 4 #Tensão do banco de capacitores, vai de 0 a 3v
-    entrada_h4 = 1
+##    h4 = 4 #Tensão do banco de capacitores, vai de 0 a 3v
+##    entrada_h4 = 1
     
-    h8 = 15 #Detecção de sobrecorrente, 3.1v
-    entrada_h8 = 0
+##    h8 = 15 #Detecção de sobrecorrente, 3.1v
+##    entrada_h8 = 0
     
-    h11 = 2 #Detecção de supra-tensão, 1.8v
-    entrada_h11 = 0
+##    h11 = 2 #Detecção de supra-tensão, 1.8v
+##    entrada_h11 = 0
     
-    h13 = 13 #//Temperatura
-    entrada_h13 = 0
-    sensor = ds18x20.DS18X20(onewire.OneWire(Pin(h13)))
-    roms = sensor.scan()
+##    h13 = 13 #//Temperatura
+##    entrada_h13 = 0
+##    sensor = ds18x20.DS18X20(onewire.OneWire(Pin(h13)))
+##    roms = sensor.scan()
     
-    sw3 = 32; #Se for 1 o protocolo funciona
-    entrada_sw3 = 0
-    
+##    sw3 = 32; #Se for 1 o protocolo funciona
+##    entrada_sw3 = 0
+
     ###Entradas:
-    rp3 = 26 #Esse é o pino que "receberá o valor" do potenciometro para o PWM duty 33
-    prp3 = ADC(Pin(rp3))
-    rp2 = 14 #Esse é o pino que "receberá o valor" do potenciometro para a frequência 12
-    prp2 = ADC(Pin(rp2))
+##    rp3 = 35 #(era 26) #Esse é o pino que "receberá o valor" do potenciometro para o PWM duty 33
+##    prp3 = ADC(Pin(rp3))
+##    rp2 = 14 #Esse é o pino que "receberá o valor" do potenciometro para a frequência 12
+##    prp2 = ADC(Pin(rp2))
+
+    #Novos 31_7:
+    telabot = 35
+    telabot = ADC(Pin(telabot))
+
+    telapot = 34
+    entrada_telapot = ADC(Pin(telapot))
     
     ###Saídas:
-    h6 = 27 #Pré-carga
-    h9 = 25 #PWM
+    h6 = 22 #(era 27) #Pré-carga
+    h9 = 1 #(era 25) #PWM
     
     ###Parte para funções de curvas:
     potValue1, potValue2 = 0, 0
     
     potValueReal = 0 #Mudar o duty de maneira lenta
-    potValueReal2 = 0 #Mudar a frequência de maneira lenta
+##    potValueReal2 = 0 #Mudar a frequência de maneira lenta
     estado, estado_ = 0, 0
     
     #Propriedades do canal PWN
@@ -102,19 +108,23 @@ if __name__ == "__main__":
     #Mesma estrutura do void Setup do outro código:
 
     #Pinos que irão receber valores:
-    ph4 = ADC(Pin(h4))
-    ph8 = ADC(Pin(h8))
-    ph11 = ADC(Pin(h11))
-    ph13 = ADC(Pin(h13))
+##    ph4 = ADC(Pin(h4))
+##    ph8 = ADC(Pin(h8))
+##    ph11 = ADC(Pin(h11))
+##    ph13 = ADC(Pin(h13))
     
     #Botão de segurança:
-    psw3 = ADC(Pin(sw3))
+##    psw3 = ADC(Pin(sw3))
 
     #Como temos que mandar alguns volts ou saidas 0, 1 pelas portas fazemos:
     ph6 = Pin(h6, Pin.OUT)
 
-    #O Programa deve ficar inativo por 2 segundos...
-    sleep(1)
+    ph6.off() #Começa desligado
+
+    #O Programa deve ficar inativo por n segundos...
+    sleep(5)
+
+    ph6.on()
 
     #Permanece [0] até que [H4 (V_BUS)] seja maior que [3V]
     #while ph4.read() < 1241 * 3:
@@ -122,10 +132,22 @@ if __name__ == "__main__":
 
     #Ativa o sensor:
     #sensor.convert_temp()
-    
     pwm.freq(1)
 
-    musicas("intro", pwm)
+    toca_mus = True
+    p = 0
+    while p < 100:
+    #Se telabot for 0 a saída h9 é 432 e o duty cycle
+        if telabot.read() < 100:
+            pwm.freq(432)
+            toca_mus = False
+            break
+        sleep(0.05)
+        p += 1
+
+    #Se em 5 segundos o telabot é off, então:
+    if toca_mus:
+        musicas("intro", pwm)
     
     #Loop principal:
     while True:
@@ -138,14 +160,14 @@ if __name__ == "__main__":
         if pwm_block == False:
             potValueReal2 = prp2.read() #Lê a frequência
             
-        if (mod(potValueReal-potValue1) > 30 or estado_ != estado  or mod(potValueReal2-potValue2)> 30 ) and contagem % 25 == 0:
-            if mod(potValueReal2-potValue2) > 30:
-                try:
-                    pwm.freq(int (int((25 * int(freq/25)))/4))
-                except ValueError:
-                    pwm.freq(25)
-            estado_ = estado
-            potValue2 = potValueReal2
+##        if (mod(potValueReal-potValue1) > 30 or estado_ != estado  or mod(potValueReal2-potValue2)> 30 ) and contagem % 25 == 0:
+##            if mod(potValueReal2-potValue2) > 30:
+##                try:
+##                    pwm.freq(int(int((25 * int(freq/25)))/4))
+##                except ValueError:
+##                    pwm.freq(25)
+##            estado_ = estado
+##            potValue2 = potValueReal2
         #try:
         pwm.duty(dutyCycle_)
         #except TypeError:
@@ -162,10 +184,10 @@ if __name__ == "__main__":
             freq = potValueReal2
 
         #Lógica quando h4 for maior do que 2.5v a saída é 1 h6:
-        if ph4.read() > 1241 * 2.5:
-            ph6.on()
-        else:
-            ph6.off()
+##        if ph4.read() > 1241 * 2.5:
+##            ph6.on()
+##        else:
+##            ph6.off()
         
         #Lê a temperatura:
         if contagem % 50 == 0:
