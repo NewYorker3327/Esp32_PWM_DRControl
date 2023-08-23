@@ -16,10 +16,11 @@ import ssd1306
 def musicas(mus:str, obj):
     temp = 8
     if mus == "intro":
-        mus = [[400, 10, 5], [400, 100, 5], [400, 200, 5], [400, 400, 5],
-               [400, 700, 5], [400, 900, 5]]
-            #[[294+587, 100, 4], [370+784, 200, 4], [466+1175, 440, 4], [587+1568, 600, 4],
-            #[784+2093, 700, 4], [1175+2349, 900, 4]]
+        mus = [[392, 400, 5], [392, 400, 3], [523, 400, 5], [523, 400, 3],
+               [588, 400, 5], [588, 400, 3], [660, 400, 5], [660, 400, 3], [392, 400, 25],[392,0, .8],
+               [392, 400, 5], [523, 400, 5], [523, 400, 3], [588, 400, 5],
+               [588, 400, 5], [660, 400, 5], [588, 400, 5], [660, 400, 5], [700, 400, 3], [660, 400, 3], [700, 400, 5],
+               [660, 400, 3], [588, 400, 3], [523, 400, 25], [392, 10, 1]]
 
     if mus == "exit":
         mus = [[1568+784, 440, 2], [1175+587, 440, 2], [784+523, 440, 2], [587+294, 440, 2],
@@ -59,7 +60,7 @@ if __name__ == "__main__":
     #Como temos que mandar alguns volts ou saidas 0, 1 pelas portas fazemos:
     ph6 = Pin(13, Pin.OUT)
     ph6.off() #Começa desligado
-    sleep(5) #O Programa deve ficar inativo por n segundos...
+    sleep(0.8) #O Programa deve ficar inativo por n segundos...
     ph6.on()
 
     ###Entradas:
@@ -80,8 +81,8 @@ if __name__ == "__main__":
     contagem = 1
 
     #Para o visor:
-    pino_visor_1, pino_visor_2 = -1, -1
-    i2c = SoftI2C(scl = Pin(pino_visor_1), scl = Pin(pino_visor_2))
+    pino_visor_1, pino_visor_2 = 18, 19
+    i2c = SoftI2C(scl = Pin(pino_visor_1), sda = Pin(pino_visor_2))
 
     oled_width = 128
     oled_height = 64
@@ -131,7 +132,7 @@ if __name__ == "__main__":
             
         
         #Lê a temperatura:
-        if contagem % 200 == 0:
+        if contagem % 1000 == 0:
             #sensor.convert_temp()
             #entrada_h13 = sensor.read_temp(roms[0])
             contagem = 1
@@ -139,6 +140,6 @@ if __name__ == "__main__":
             
             oled.fill(0)
             oled.text(f"PWM values:", 0, 0, 1)
-            oled.text(f"Duty: {str(potValueReal/1023)[:6]}%", 10, 0, 1)
-            oled.text(f"Freq: {str(freq)[:6]}", 20, 0, 1)
+            oled.text(f"Duty: {str(int(potValueReal/40.99+0.5))[:6]}%", 0, 25, 1)
+            oled.text(f"Freq: {str(freq)[:6]}", 0, 50, 1)
             oled.show()

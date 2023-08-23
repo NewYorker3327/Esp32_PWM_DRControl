@@ -118,7 +118,16 @@ class SSD1306_I2C(SSD1306):
     def write_cmd(self, cmd):
         self.temp[0] = 0x80 # Co=1, D/C#=0
         self.temp[1] = cmd
-        self.i2c.writeto(self.addr, self.temp)
+        from time import sleep 
+        a = 0
+        while a < 100:
+            try:
+                self.i2c.writeto(self.addr, self.temp)
+                break
+            except Exception as error:
+                print(error)                
+                sleep(0.1)
+                a += 1
 
     def write_framebuf(self):
         # Blast out the frame buffer using a single I2C transaction to support
