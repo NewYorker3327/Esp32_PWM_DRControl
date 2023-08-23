@@ -8,25 +8,37 @@ from machine import Pin, PWM, ADC
 import onewire
 import ds18x20
 import dht
+import _thread
 
 #Para visor:
 from machine import SoftI2C
 import ssd1306
 
-def musicas(mus:str, obj):
+def printar_paralelo():
+    while True:
+        oled.fill(0)
+        oled.text(f"PWM values:", 0, 0, 1)
+        oled.text(f"Duty: {str(int(potValueReal/40.99*limite+0.5))[:6]}%", 0, 25, 1)
+        oled.text(f"Freq: {str(freq)[:6]}", 0, 50, 1)
+        oled.show()
+        sleep(0.2)
+        
+def musicas(mus:str, obj):    
     temp = 8
     if mus == "intro":
-        mus = [[392, 400, 5], [392, 400, 3], [523, 400, 5], [523, 400, 3],
-               [588, 400, 5], [588, 400, 3], [660, 400, 5], [660, 400, 3], [392, 400, 25],[392,0, .8],
+        mus = [[392, 400, 5], [392, 200, 3], [523, 100, 5], [523, 600, 3],
+               [588, 200, 5], [588, 300, 3], [660, 400, 5], [660, 400, 3], [392, 400, 25],[392,0, .8],
                [392, 400, 5], [523, 400, 5], [523, 400, 3], [588, 400, 5],
                [588, 400, 5], [660, 400, 5], [588, 400, 5], [660, 400, 5], [700, 400, 3], [660, 400, 3], [700, 400, 5],
-               [660, 400, 3], [588, 400, 3], [523, 400, 25], [392, 10, 1]]
+               [660, 400, 3], [588, 400, 3], [523, 400, 25], [392, 10, 3]]
 
     if mus == "exit":
         mus = [[1568+784, 440, 2], [1175+587, 440, 2], [784+523, 440, 2], [587+294, 440, 2],
                [523+392, 440, 2]]
 
     for nota in mus:
+        globals()['freq']=nota[0]
+        globals()['potValueReal']=nota[1]
         obj.freq(nota[0])
         obj.duty(nota[1])
         sleep(nota[2]/temp)
@@ -56,11 +68,14 @@ if __name__ == "__main__":
     
     ###Saídas:
     h6 = 13 #(era 27) #Pré-carga
-    h9 = 12 #(era 25) #PWM
+    h9 = 12 #(era 25) #PWM    
+    pwm = PWM(Pin(12))#Propriedades do canal PWN
+    pwm.freq(1)
+    pwm.duty(0)
     #Como temos que mandar alguns volts ou saidas 0, 1 pelas portas fazemos:
     ph6 = Pin(13, Pin.OUT)
     ph6.off() #Começa desligado
-    sleep(0.8) #O Programa deve ficar inativo por n segundos...
+    sleep(.8) #O Programa deve ficar inativo por n segundos...
     ph6.on()
 
     ###Entradas:
@@ -72,9 +87,6 @@ if __name__ == "__main__":
 
     potValueReal = 0 #Mudar o duty de maneira lenta
     estado, estado_ = 0, 0
-    
-    #Propriedades do canal PWN
-    pwm = PWM(Pin(12))
     
     #Bloqueando:
     pwm_block = False
@@ -100,13 +112,11 @@ if __name__ == "__main__":
 #                                                            
     #Mesma estrutura do void Setup do outro código:
 
-    pwm.duty(0)
-    pwm.freq(1)
-
     toca_mus = True
+    freq = 432
+    _thread.start_new_thread(printar_paralelo,())
     #Se telabot for 0 a saída h9 é 432 e o duty cycle
-    if telabot.value():
-        freq = 432
+    if telabot.value():        
         pwm.freq(freq)
         toca_mus = False
         
@@ -118,6 +128,8 @@ if __name__ == "__main__":
         musicas("intro", pwm)        
     
     #Loop principal:
+    freq = 432
+    limite=0.4
     while True:
         contagem += 1
 
@@ -126,7 +138,7 @@ if __name__ == "__main__":
             potValueReal = mudar(potValue1, potValueReal)
 
         try:
-            pwm.duty(int(potValueReal/4))
+            pwm.duty(int(potValueReal/4*limite))
         except ValueError:
             pwm.duty(1023)
             
@@ -136,10 +148,6 @@ if __name__ == "__main__":
             #sensor.convert_temp()
             #entrada_h13 = sensor.read_temp(roms[0])
             contagem = 1
-            print("Fazendo loop principal", potValueReal)
+            #print("Fazendo loop principal", potValueReal)
             
-            oled.fill(0)
-            oled.text(f"PWM values:", 0, 0, 1)
-            oled.text(f"Duty: {str(int(potValueReal/40.99+0.5))[:6]}%", 0, 25, 1)
-            oled.text(f"Freq: {str(freq)[:6]}", 0, 50, 1)
-            oled.show()
+            
