@@ -9,6 +9,10 @@ import onewire
 import ds18x20
 import dht
 
+#Para visor:
+from machine import SoftI2C
+import ssd1306
+
 def musicas(mus:str, obj):
     temp = 8
     if mus == "intro":
@@ -74,6 +78,18 @@ if __name__ == "__main__":
     #Bloqueando:
     pwm_block = False
     contagem = 1
+
+    #Para o visor:
+    pino_visor_1, pino_visor_2 = -1, -1
+    i2c = SoftI2C(scl = Pin(pino_visor_1), scl = Pin(pino_visor_2))
+
+    oled_width = 128
+    oled_height = 64
+    oled = ssd1306.SSD1306_I2C(oled_width, oled_height, i2c)
+
+    #Testando:
+    oled.text("Ligando...", 10, 10, 1)
+    oled.show()
     
 #   _____                     _                  _           
 #  | ____|_  _____  ___ _   _| |_ __ _ _ __   __| | ___    _ 
@@ -89,7 +105,8 @@ if __name__ == "__main__":
     toca_mus = True
     #Se telabot for 0 a saída h9 é 432 e o duty cycle
     if telabot.value():
-        pwm.freq(432)
+        freq = 432
+        pwm.freq(freq)
         toca_mus = False
         
     print(telabot.value())
@@ -114,8 +131,14 @@ if __name__ == "__main__":
             
         
         #Lê a temperatura:
-        if contagem % 50 == 0:
+        if contagem % 200 == 0:
             #sensor.convert_temp()
             #entrada_h13 = sensor.read_temp(roms[0])
             contagem = 1
-            print("Fazendo loop principal", potValueReal)    
+            print("Fazendo loop principal", potValueReal)
+            
+            oled.fill(0)
+            oled.text(f"PWM values:", 0, 0, 1)
+            oled.text(f"Duty: {str(potValueReal/1023)[:6]}%", 10, 0, 1)
+            oled.text(f"Freq: {str(freq)[:6]}", 20, 0, 1)
+            oled.show()
