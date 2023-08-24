@@ -21,7 +21,7 @@ def printar_paralelo():
         oled.text(f"Duty: {str(int(potValueReal/40.99*limite+0.5))[:6]}%", 0, 25, 1)
         oled.text(f"Freq: {str(freq)[:6]}", 0, 50, 1)
         oled.show()
-        sleep(0.2)
+        sleep(0.25)
         
 def musicas(mus:str, obj):    
     temp = 8
@@ -64,8 +64,8 @@ if __name__ == "__main__":
 #  |____/ \___|_| |_|_| |_|_|\___\___/ \___||___/ (_)
 #                             )_)                    
     
-    ###Variáveis potencia:
-    
+    ###Variável limite duty (1=100%):
+    limite = 0.4    
     ###Saídas:
     h6 = 13 #(era 27) #Pré-carga
     h9 = 12 #(era 25) #PWM    
@@ -128,8 +128,7 @@ if __name__ == "__main__":
         musicas("intro", pwm)        
     
     #Loop principal:
-    freq = 432
-    limite=0.4
+    freq = 432    
     while True:
         contagem += 1
 
