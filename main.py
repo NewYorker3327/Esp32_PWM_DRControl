@@ -21,12 +21,22 @@ from onewire import OneWire
 contagem_ = 0
 
 def processos_paralelos():
+    _t_3 = "."
     while True:
         contagem_paralela += 1
 
         if contagem_paralela % 8 == 0:
             contagem_paralela = 0
             temperatura = sensor_temperatura_1.read_temp(roms[0])
+            temperatura_de_seguranca = sensor_temperatura_2.read_temp(roms[0])
+            if temperatura_de_seguranca > 55:
+                _t_3 = "!!!"
+            elif temperatura_de_seguranca > 50:
+                _t_3 = "!!"
+            elif temperatura_de_seguranca > 45:
+                _t_3 = "!"
+            else:
+                _t_3 = " "
 
         if contagem_paralela % 2 == 0:
             _t_1, _t_2 = ".", " "
@@ -37,7 +47,7 @@ def processos_paralelos():
         oled.text(f"{_t_1}Valores PWM:", 0, 0, 1)
         oled.text(f"{_t_2}Duty: {str(int(potValueReal/40.99*limite+0.5))[:6]}%", 0, 16, 1)
         oled.text(f"{_t_1}Freq: {str(freq)[:6]}", 0, 32, 1)
-        oled.text(f"{_t_2}Temperatura: {str(temperatura)[:4]}", 0, 48, 1)
+        oled.text(f"{_t_2}Temperatura: {str(temperatura)[:4]} {_t_3}", 0, 48, 1)
         oled.show()
         sleep(0.25)
         
@@ -120,10 +130,17 @@ if __name__ == "__main__":
 
     #Para o sensor de temperatura ds18x20:
     sensor_temperatura_1 = DS18X20(OneWire(Pin('a definir', PIN.OPEN_DRAIN)))
-    sensor_temperatura_1.powermode(Pin('P11'))
+    sensor_temperatura_1.powermode(Pin('a definir'))
     roms = sensor_temperatura_1.scan()
     sensor_temperatura_1.resolution(roms[0])
     temperatura = sensor_temperatura_1.read_temp(roms[0])
+
+    sensor_temperatura_2 = DS18X20(OneWire(Pin('a definir', PIN.OPEN_DRAIN)))
+    sensor_temperatura_2.powermode(Pin('a definir'))
+    roms = sensor_temperatura_2.scan()
+    sensor_temperatura_2.resolution(roms[0])
+    temperatura_de_seguranca = sensor_temperatura_2.read_temp(roms[0])
+    
     
 #   _____                     _                  _           
 #  | ____|_  _____  ___ _   _| |_ __ _ _ __   __| | ___    _ 
@@ -155,8 +172,13 @@ if __name__ == "__main__":
         musicas("intro", pwm)        
     
     #Loop principal:
-    freq = 432    
+    freq = 432
     while True:
+        if temperatura_de_seguranca > 60:
+            pwm.duty(0)
+            pwm.freq(1)
+            break
+            
         if pwm_block == False: 
             potValue1 = telapot.read() #Lê o Duty
             potValueReal = mudar(potValue1, potValueReal)
@@ -164,5 +186,6 @@ if __name__ == "__main__":
         try:
             pwm.duty(int(potValueReal/4*limite))
         except ValueError:
-            pwm.duty(1023)            
+            pwm.duty(1023)
+        
             
