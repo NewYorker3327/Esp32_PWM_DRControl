@@ -14,12 +14,30 @@ import _thread
 from machine import SoftI2C
 import ssd1306
 
-def printar_paralelo():
+#Para sensores de temperatura:
+from ds18x20 import DS18X20
+from onewire import OneWire
+
+contagem_ = 0
+
+def processos_paralelos():
     while True:
+        contagem_paralela += 1
+
+        if contagem_paralela % 8 == 0:
+            contagem_paralela = 0
+            temperatura = sensor_temperatura_1.read_temp(roms[0])
+
+        if contagem_paralela % 2 == 0:
+            _t_1, _t_2 = ".", " "
+        else:
+            _t_1, _t_2 = " ", "."
+            
         oled.fill(0)
-        oled.text(f"PWM values:", 0, 0, 1)
-        oled.text(f"Duty: {str(int(potValueReal/40.99*limite+0.5))[:6]}%", 0, 25, 1)
-        oled.text(f"Freq: {str(freq)[:6]}", 0, 50, 1)
+        oled.text(f"{_t_1}Valores PWM:", 0, 0, 1)
+        oled.text(f"{_t_2}Duty: {str(int(potValueReal/40.99*limite+0.5))[:6]}%", 0, 16, 1)
+        oled.text(f"{_t_1}Freq: {str(freq)[:6]}", 0, 32, 1)
+        oled.text(f"{_t_2}Temperatura: {str(temperatura)[:4]}", 0, 48, 1)
         oled.show()
         sleep(0.25)
         
@@ -56,6 +74,8 @@ def mudar(a:int, b:int):
         return b - 1
     return b
 
+
+
 if __name__ == "__main__":
 #   ____        __ _       _      /\/|               
 #  |  _ \  ___ / _(_)_ __ (_) ___|/\/   ___  ___   _ 
@@ -63,9 +83,9 @@ if __name__ == "__main__":
 #  | |_| |  __/  _| | | | | | (_| (_) |  __/\__ \  _ 
 #  |____/ \___|_| |_|_| |_|_|\___\___/ \___||___/ (_)
 #                             )_)                    
-    
     ###Variável limite duty (1=100%):
-    limite = 0.4    
+    limite = 0.4
+    
     ###Saídas:
     h6 = 13 #(era 27) #Pré-carga
     h9 = 12 #(era 25) #PWM    
@@ -84,7 +104,6 @@ if __name__ == "__main__":
 
     ###Parte para funções de curvas:
     potValue1 = 0
-
     potValueReal = 0 #Mudar o duty de maneira lenta
     estado, estado_ = 0, 0
     
@@ -95,14 +114,16 @@ if __name__ == "__main__":
     #Para o visor:
     pino_visor_1, pino_visor_2 = 18, 19
     i2c = SoftI2C(scl = Pin(pino_visor_1), sda = Pin(pino_visor_2))
-
     oled_width = 128
     oled_height = 64
     oled = ssd1306.SSD1306_I2C(oled_width, oled_height, i2c)
 
-    #Testando:
-    oled.text("Ligando...", 10, 10, 1)
-    oled.show()
+    #Para o sensor de temperatura ds18x20:
+    sensor_temperatura_1 = DS18X20(OneWire(Pin('a definir', PIN.OPEN_DRAIN)))
+    sensor_temperatura_1.powermode(Pin('P11'))
+    roms = sensor_temperatura_1.scan()
+    sensor_temperatura_1.resolution(roms[0])
+    temperatura = sensor_temperatura_1.read_temp(roms[0])
     
 #   _____                     _                  _           
 #  | ____|_  _____  ___ _   _| |_ __ _ _ __   __| | ___    _ 
@@ -110,11 +131,17 @@ if __name__ == "__main__":
 #  | |___ >  <  __/ (__| |_| | || (_| | | | | (_| | (_) |  _ 
 #  |_____/_/\_\___|\___|\__,_|\__\__,_|_| |_|\__,_|\___/  (_)
 #                                                            
-    #Mesma estrutura do void Setup do outro código:
+    #Ligando visor:
+    oled.text("Ligando...", 10, 10, 1)
+    oled.show()
 
+    #Existem duas maneiras de inicialização:
     toca_mus = True
     freq = 432
-    _thread.start_new_thread(printar_paralelo,())
+
+    #Ativando leituras em threads:
+    _thread.start_new_thread(processos_paralelos,())
+    
     #Se telabot for 0 a saída h9 é 432 e o duty cycle
     if telabot.value():        
         pwm.freq(freq)
@@ -122,7 +149,7 @@ if __name__ == "__main__":
         
     print(telabot.value())
 
-    #Se em 5 segundos o telabot é off:
+    #Se em 5 segundos o telabot é off o toca_mus é on:
     if toca_mus:
         print("Tocando musica")
         musicas("intro", pwm)        
@@ -130,8 +157,6 @@ if __name__ == "__main__":
     #Loop principal:
     freq = 432    
     while True:
-        contagem += 1
-
         if pwm_block == False: 
             potValue1 = telapot.read() #Lê o Duty
             potValueReal = mudar(potValue1, potValueReal)
@@ -139,14 +164,5 @@ if __name__ == "__main__":
         try:
             pwm.duty(int(potValueReal/4*limite))
         except ValueError:
-            pwm.duty(1023)
-            
-        
-        #Lê a temperatura:
-        if contagem % 1000 == 0:
-            #sensor.convert_temp()
-            #entrada_h13 = sensor.read_temp(roms[0])
-            contagem = 1
-            #print("Fazendo loop principal", potValueReal)
-            
+            pwm.duty(1023)            
             
