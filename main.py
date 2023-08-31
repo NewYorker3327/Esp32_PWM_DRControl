@@ -18,44 +18,33 @@ import ssd1306
 from ds18x20 import DS18X20
 from onewire import OneWire
 
-contagem_ = 0
-
-def processos_paralelos():
-    _t_3 = "."
-    while True:
-        contagem_paralela += 1
-
-        if contagem_paralela % 8 == 0:
-            contagem_paralela = 0
-            temperatura = sensor_temperatura_1.read_temp(roms[0])
-            temperatura_de_seguranca = sensor_temperatura_2.read_temp(roms[0])
-            if temperatura_de_seguranca > 55:
-                _t_3 = "!!!"
-            elif temperatura_de_seguranca > 50:
-                _t_3 = "!!"
-            elif temperatura_de_seguranca > 45:
-                _t_3 = "!"
-            else:
-                _t_3 = " "
-
+def processos_paralelos(): 
+    contagem_paralela = 0
+    while True:        
         if contagem_paralela % 2 == 0:
             _t_1, _t_2 = ".", " "
         else:
             _t_1, _t_2 = " ", "."
             
         oled.fill(0)
-        oled.text(f"{_t_1}Valores PWM:", 0, 0, 1)
-        oled.text(f"{_t_2}Duty: {str(int(potValueReal/40.99*limite+0.5))[:6]}%", 0, 16, 1)
-        oled.text(f"{_t_1}Freq: {str(freq)[:6]}", 0, 32, 1)
-        oled.text(f"{_t_2}Temperatura: {str(temperatura)[:4]} {_t_3}", 0, 48, 1)
+        oled.text(f"{_t_1}Valores_PWM:", 0, 0, 1)
+        if not pausa_de_seguranca:
+            oled.text(f"{_t_2}Duty: {str(int(potValueReal/40.99*limite+0.5))[:6]}%", 0, 16, 1)
+        else:
+            oled.text(f"{_t_2}Duty:RESFRIANDO%", 0, 16, 1)
+        oled.text(f"{_t_1}Freq:{str(freq)[:6]}", 0, 32, 1)
+        oled.text(f"{_t_2}Ponte:{str(temperatura_de_seguranca)[:4]} {_t_3}", 0, 48, 1)
+        oled.text(f"{_t_1}Temp:{str(temperatura)[:5]}", 0, 56, 1)        
         oled.show()
         sleep(0.25)
+        
+        contagem_paralela += 1
         
 def musicas(mus:str, obj):    
     temp = 8
     if mus == "intro":
-        mus = [[392, 400, 5], [392, 200, 3], [523, 100, 5], [523, 600, 3],
-               [588, 200, 5], [588, 300, 3], [660, 400, 5], [660, 400, 3], [392, 400, 25],[392,0, .8],
+        mus = [[392, 200, 2], [392, 400, 3], [523, 200, 2], [523, 400, 3],
+               [588, 200, 2], [588, 400, 3], [660, 200, 2], [660, 400, 3], [392, 200, 2],[392, 400, 23], [392,0, .8],
                [392, 400, 5], [523, 400, 5], [523, 400, 3], [588, 400, 5],
                [588, 400, 5], [660, 400, 5], [588, 400, 5], [660, 400, 5], [700, 400, 3], [660, 400, 3], [700, 400, 5],
                [660, 400, 3], [588, 400, 3], [523, 400, 25], [392, 10, 3]]
@@ -129,17 +118,17 @@ if __name__ == "__main__":
     oled = ssd1306.SSD1306_I2C(oled_width, oled_height, i2c)
 
     #Para o sensor de temperatura ds18x20:
-    sensor_temperatura_1 = DS18X20(OneWire(Pin('a definir', PIN.OPEN_DRAIN)))
-    sensor_temperatura_1.powermode(Pin('a definir'))
-    roms = sensor_temperatura_1.scan()
-    sensor_temperatura_1.resolution(roms[0])
-    temperatura = sensor_temperatura_1.read_temp(roms[0])
+    sensor_temperatura_1 = DS18X20(OneWire(Pin(17)))
+    #sensor_temperatura_1.powermode(Pin(17))
+    roms1 = sensor_temperatura_1.scan()
+    #sensor_temperatura_1.resolution(roms[0])
+    temperatura = sensor_temperatura_1.read_temp(roms1[0])
 
-    sensor_temperatura_2 = DS18X20(OneWire(Pin('a definir', PIN.OPEN_DRAIN)))
-    sensor_temperatura_2.powermode(Pin('a definir'))
-    roms = sensor_temperatura_2.scan()
-    sensor_temperatura_2.resolution(roms[0])
-    temperatura_de_seguranca = sensor_temperatura_2.read_temp(roms[0])
+    sensor_temperatura_2 = DS18X20(OneWire(Pin(5)))
+    #sensor_temperatura_2.powermode(Pin(5))
+    roms2 = sensor_temperatura_2.scan()
+    #sensor_temperatura_2.resolution(roms[0])
+    temperatura_de_seguranca = sensor_temperatura_2.read_temp(roms2[0])
     
     
 #   _____                     _                  _           
@@ -155,6 +144,8 @@ if __name__ == "__main__":
     #Existem duas maneiras de inicialização:
     toca_mus = True
     freq = 432
+    _t_3 = "."
+    pausa_de_seguranca = False
 
     #Ativando leituras em threads:
     _thread.start_new_thread(processos_paralelos,())
@@ -170,22 +161,44 @@ if __name__ == "__main__":
     if toca_mus:
         print("Tocando musica")
         musicas("intro", pwm)        
-    
+        
     #Loop principal:
     freq = 432
+    contagem = 0    
     while True:
-        if temperatura_de_seguranca > 60:
+        contagem += 1
+        if temperatura_de_seguranca > 60 or pausa_de_seguranca:
             pwm.duty(0)
             pwm.freq(1)
-            break
-            
+            pausa_de_seguranca = True
+            pwm_block = True
+            if temperatura_de_seguranca < 40:
+                pausa_de_seguranca = False
+                pwm_block = False
+                pwm.freq(432)
+                
         if pwm_block == False: 
             potValue1 = telapot.read() #Lê o Duty
             potValueReal = mudar(potValue1, potValueReal)
 
-        try:
-            pwm.duty(int(potValueReal/4*limite))
-        except ValueError:
-            pwm.duty(1023)
-        
-            
+        if not pausa_de_seguranca:
+            try:
+                pwm.duty(int(potValueReal/4*limite))
+            except ValueError:
+                pwm.duty(1023)
+
+        if contagem % 3000 == 0:
+            contagem = 0
+            sensor_temperatura_1.convert_temp()
+            sensor_temperatura_2.convert_temp()
+            temperatura = sensor_temperatura_1.read_temp(roms1[0])
+            temperatura_de_seguranca = sensor_temperatura_2.read_temp(roms2[0])
+            print(temperatura, temperatura_de_seguranca)
+            if temperatura_de_seguranca > 55:
+                _t_3 = "!!!"
+            elif temperatura_de_seguranca > 50:
+                _t_3 = "!!"
+            elif temperatura_de_seguranca > 45:
+                _t_3 = "!"
+            else:
+                _t_3 = " "
