@@ -29,14 +29,14 @@ def processos_paralelos():
         oled.fill(0)
         oled.text(f"{_t_1}Valores_PWM:", 0, 0, 1)
         if not pausa_de_seguranca:
-            oled.text(f"{_t_2}Duty: {str(int(potValueReal/40.99*limite+0.5))[:6]}%", 0, 16, 1)
+            oled.text(f"{_t_2}Duty: {str(int(potValueReal/40.99*limite+0.5))[:6]}%", 0, 14, 1)
         else:
-            oled.text(f"{_t_2}Duty:RESFRIANDO%", 0, 16, 1)
-        oled.text(f"{_t_1}Freq:{str(freq)[:6]}", 0, 32, 1)
-        oled.text(f"{_t_2}Ponte:{str(temperatura_de_seguranca)[:4]} {_t_3}", 0, 48, 1)
-        oled.text(f"{_t_1}Temp:{str(temperatura)[:5]}", 0, 56, 1)        
+            oled.text(f"{_t_2}Duty:RESFRIANDO%", 0, 14, 1)
+        oled.text(f"{_t_1}Freq:{str(freq)[:6]}Hz", 0, 28, 1)
+        oled.text(f"{_t_2}Ponte:{str(temperatura_de_seguranca)[:4]}C{_t_3}", 0, 42, 1)
+        oled.text(f"{_t_1}Temp:{str(temperatura)[:5]}C", 0, 56, 1)        
         oled.show()
-        sleep(0.25)
+        sleep(0.25  )
         
         contagem_paralela += 1
         
@@ -83,7 +83,7 @@ if __name__ == "__main__":
 #  |____/ \___|_| |_|_| |_|_|\___\___/ \___||___/ (_)
 #                             )_)                    
     ###Variável limite duty (1=100%):
-    limite = 0.4
+    limite = 0.35 
     
     ###Saídas:
     h6 = 13 #(era 27) #Pré-carga
@@ -94,7 +94,7 @@ if __name__ == "__main__":
     #Como temos que mandar alguns volts ou saidas 0, 1 pelas portas fazemos:
     ph6 = Pin(13, Pin.OUT)
     ph6.off() #Começa desligado
-    sleep(.8) #O Programa deve ficar inativo por n segundos...
+    sleep(3) #O Programa deve ficar inativo por n segundos...
     ph6.on()
 
     ###Entradas:
@@ -143,14 +143,14 @@ if __name__ == "__main__":
 
     #Existem duas maneiras de inicialização:
     toca_mus = True
-    freq = 432
+    freq = 665
     _t_3 = "."
     pausa_de_seguranca = False
 
     #Ativando leituras em threads:
     _thread.start_new_thread(processos_paralelos,())
     
-    #Se telabot for 0 a saída h9 é 432 e o duty cycle
+    #Se telabot for 0 a saída h9 é 665 e o duty cycle
     if telabot.value():        
         pwm.freq(freq)
         toca_mus = False
@@ -163,7 +163,7 @@ if __name__ == "__main__":
         musicas("intro", pwm)        
         
     #Loop principal:
-    freq = 432
+    freq = 665
     contagem = 0    
     while True:
         contagem += 1
@@ -175,7 +175,7 @@ if __name__ == "__main__":
             if temperatura_de_seguranca < 40:
                 pausa_de_seguranca = False
                 pwm_block = False
-                pwm.freq(432)
+                pwm.freq(665)
                 
         if pwm_block == False: 
             potValue1 = telapot.read() #Lê o Duty
