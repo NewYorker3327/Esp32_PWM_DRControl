@@ -4,14 +4,15 @@
 
 #Bibliotecas:
 from time import sleep, time
-from machine import Pin, PWM, ADC, I2C
+from machine import Pin, PWM, ADC
+from machine import SoftI2C as I2C
 import onewire
 import ds18x20
 import dht
 import _thread
 
 #Visor:
-from i2c_lcd import I2cLcd
+from mp_i2x_lcd1602 import LCD1602 as LCD
 
 #Para sensores de temperatura:
 from ds18x20 import DS18X20
@@ -25,22 +26,19 @@ def processos_paralelos():
         else:
             _t_1, _t_2 = " ", "."
             
-        lcd.clear()
-        
-        lcd.move_to(0, 6)
         if not pausa_de_seguranca:
-            lcd.putstr(f"{_t_2}Duty: {str(int(potValueReal/40.99*limite+0.5))[:6]}%")
+            t1_ = f"{_t_2}Duty: {str(int(potValueReal/40.99*limite+0.5))[:6]}%"
         else:
-            lcd.putstr(f"{_t_2}Duty: RESFR%")
-
-        lcd.move_to(1, 0)
-        lcd.putstr(f"{_t_1}Freq:{str(freq)[:4]}Hz"
+            t1_ = f"{_t_2}Duty: RESFR%"
 
 ##        lcd.move_to(0, 0)
 ##        lcd.putstr(f"{_t_2}Ponte:{str(temperatura_de_seguranca)[:4]}{_t_3}", 0, 42, 1)
 
-        lcd.move_to(0, 0)
-        lcd.putstr(f"{_t_1}Temp:{str(temperatura)[:5]}C")        
+        lcd.set_line(0)
+        lcd.message(f"{_t_1}Temp:{str(temperatura)[:5]}C")
+
+        lcd.set_line(1)
+        lcd.puts(f"{t1_} {_t_1}Freq:{str(freq)[:4]}Hz")
 
         sleep(0.25)
         
@@ -120,8 +118,8 @@ if __name__ == "__main__":
     pino_visor_1, pino_visor_2 = 18, 19
     DEFALT_I2C_ADDR = 0x20
 
-    i2x = I2C(scl = Pin(pino_visor_1), sda = Pin(pino_visor_2), freq = 400000)
-    lcd = I2cLcd(i2c, DEFALT_I2C_ADDR, 2, 16)
+    i2c = I2C(1, scl = Pin(pino_visor_1), sda = Pin(pino_visor_2), freq = 400000)
+    lcd = LCD(i2c)
 
     #Para o sensor de temperatura ds18x20:
     sensor_temperatura_1 = DS18X20(OneWire(Pin(5)))
