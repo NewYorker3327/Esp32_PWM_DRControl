@@ -4,15 +4,14 @@
 
 #Bibliotecas:
 from time import sleep, time
-from machine import Pin, PWM, ADC
+from machine import Pin, PWM, ADC, I2C
 import onewire
 import ds18x20
 import dht
 import _thread
 
-#Para visor:
-from machine import SoftI2C
-import ssd1306
+#Visor:
+from i2c_lcd import I2cLcd
 
 #Para sensores de temperatura:
 from ds18x20 import DS18X20
@@ -26,17 +25,24 @@ def processos_paralelos():
         else:
             _t_1, _t_2 = " ", "."
             
-        oled.fill(0)
-        oled.text(f"{_t_1}Valores_PWM:", 0, 0, 1)
+        lcd.clear()
+        
+        lcd.move_to(0, 6)
         if not pausa_de_seguranca:
-            oled.text(f"{_t_2}Duty: {str(int(potValueReal/40.99*limite+0.5))[:6]}%", 0, 14, 1)
+            lcd.putstr(f"{_t_2}Duty: {str(int(potValueReal/40.99*limite+0.5))[:6]}%")
         else:
-            oled.text(f"{_t_2}Duty:RESFRIANDO%", 0, 14, 1)
-        oled.text(f"{_t_1}Freq:{str(freq)[:6]}Hz", 0, 28, 1)
-        oled.text(f"{_t_2}Ponte:{str(temperatura_de_seguranca)[:4]}C{_t_3}", 0, 42, 1)
-        oled.text(f"{_t_1}Temp:{str(temperatura)[:5]}C", 0, 56, 1)        
-        oled.show()
-        sleep(0.25  )
+            lcd.putstr(f"{_t_2}Duty: RESFR%")
+
+        lcd.move_to(1, 0)
+        lcd.putstr(f"{_t_1}Freq:{str(freq)[:4]}Hz"
+
+##        lcd.move_to(0, 0)
+##        lcd.putstr(f"{_t_2}Ponte:{str(temperatura_de_seguranca)[:4]}{_t_3}", 0, 42, 1)
+
+        lcd.move_to(0, 0)
+        lcd.putstr(f"{_t_1}Temp:{str(temperatura)[:5]}C")        
+
+        sleep(0.25)
         
         contagem_paralela += 1
         
@@ -112,23 +118,19 @@ if __name__ == "__main__":
 
     #Para o visor:
     pino_visor_1, pino_visor_2 = 18, 19
-    i2c = SoftI2C(scl = Pin(pino_visor_1), sda = Pin(pino_visor_2))
-    oled_width = 128
-    oled_height = 64
-    oled = ssd1306.SSD1306_I2C(oled_width, oled_height, i2c)
+    DEFALT_I2C_ADDR = 0x20
+
+    i2x = I2C(scl = Pin(pino_visor_1), sda = Pin(pino_visor_2), freq = 400000)
+    lcd = I2cLcd(i2c, DEFALT_I2C_ADDR, 2, 16)
 
     #Para o sensor de temperatura ds18x20:
-    sensor_temperatura_1 = DS18X20(OneWire(Pin(17)))
-    #sensor_temperatura_1.powermode(Pin(17))
+    sensor_temperatura_1 = DS18X20(OneWire(Pin(5)))
     roms1 = sensor_temperatura_1.scan()
-    #sensor_temperatura_1.resolution(roms[0])
     temperatura = sensor_temperatura_1.read_temp(roms1[0])
 
-    sensor_temperatura_2 = DS18X20(OneWire(Pin(5)))
-    #sensor_temperatura_2.powermode(Pin(5))
-    roms2 = sensor_temperatura_2.scan()
-    #sensor_temperatura_2.resolution(roms[0])
-    temperatura_de_seguranca = sensor_temperatura_2.read_temp(roms2[0])
+##    sensor_temperatura_2 = DS18X20(OneWire(Pin(17)))
+##    roms2 = sensor_temperatura_2.scan()
+##    temperatura_de_seguranca = sensor_temperatura_2.read_temp(roms2[0])
     
     
 #   _____                     _                  _           
@@ -138,8 +140,7 @@ if __name__ == "__main__":
 #  |_____/_/\_\___|\___|\__,_|\__\__,_|_| |_|\__,_|\___/  (_)
 #                                                            
     #Ligando visor:
-    oled.text("Ligando...", 10, 10, 1)
-    oled.show()
+    lcd.putstr("Carregando...")
 
     #Existem duas maneiras de inicialização:
     toca_mus = True
@@ -167,15 +168,15 @@ if __name__ == "__main__":
     contagem = 0    
     while True:
         contagem += 1
-        if temperatura_de_seguranca > 60 or pausa_de_seguranca:
-            pwm.duty(0)
-            pwm.freq(1)
-            pausa_de_seguranca = True
-            pwm_block = True
-            if temperatura_de_seguranca < 40:
-                pausa_de_seguranca = False
-                pwm_block = False
-                pwm.freq(665)
+##        if temperatura_de_seguranca > 60 or pausa_de_seguranca:
+##            pwm.duty(0)
+##            pwm.freq(1)
+##            pausa_de_seguranca = True
+##            pwm_block = True
+##            if temperatura_de_seguranca < 40:
+##                pausa_de_seguranca = False
+##                pwm_block = False
+##                pwm.freq(665)
                 
         if pwm_block == False: 
             potValue1 = telapot.read() #Lê o Duty
@@ -190,15 +191,7 @@ if __name__ == "__main__":
         if contagem % 3000 == 0:
             contagem = 0
             sensor_temperatura_1.convert_temp()
-            sensor_temperatura_2.convert_temp()
+##            sensor_temperatura_2.convert_temp()
             temperatura = sensor_temperatura_1.read_temp(roms1[0])
-            temperatura_de_seguranca = sensor_temperatura_2.read_temp(roms2[0])
-            print(temperatura, temperatura_de_seguranca)
-            if temperatura_de_seguranca > 55:
-                _t_3 = "!!!"
-            elif temperatura_de_seguranca > 50:
-                _t_3 = "!!"
-            elif temperatura_de_seguranca > 45:
-                _t_3 = "!"
-            else:
-                _t_3 = " "
+##            temperatura_de_seguranca = sensor_temperatura_2.read_temp(roms2[0])
+            print(temperatura)
