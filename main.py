@@ -12,7 +12,7 @@ import dht
 import _thread
 
 #Visor:
-from mp_i2x_lcd1602 import LCD1602 as LCD
+from mp_i2c_lcd1602 import LCD1602 as LCD
 
 #Para sensores de temperatura:
 from ds18x20 import DS18X20
@@ -34,11 +34,9 @@ def processos_paralelos():
 ##        lcd.move_to(0, 0)
 ##        lcd.putstr(f"{_t_2}Ponte:{str(temperatura_de_seguranca)[:4]}{_t_3}", 0, 42, 1)
 
-        lcd.set_line(0)
-        lcd.message(f"{_t_1}Temp:{str(temperatura)[:5]}C")
+        lcd.puts(f"{_t_1}Temp:{str(temperatura)[:5]}C", 0, 0)
 
-        lcd.set_line(1)
-        lcd.puts(f"{t1_} {_t_1}Freq:{str(freq)[:4]}Hz")
+        lcd.puts(f"{t1_} {_t_1}Freq:{str(freq)[:4]}Hz", 1, 0)
 
         sleep(0.25)
         
@@ -116,13 +114,12 @@ if __name__ == "__main__":
 
     #Para o visor:
     pino_visor_1, pino_visor_2 = 18, 19
-    DEFALT_I2C_ADDR = 0x20
 
-    i2c = I2C(1, scl = Pin(pino_visor_1), sda = Pin(pino_visor_2), freq = 400000)
+    i2c = I2C(scl = Pin(pino_visor_1), sda = Pin(pino_visor_2), freq = 400000)
     lcd = LCD(i2c)
 
     #Para o sensor de temperatura ds18x20:
-    sensor_temperatura_1 = DS18X20(OneWire(Pin(5)))
+    sensor_temperatura_1 = DS18X20(OneWire(Pin(17)))
     roms1 = sensor_temperatura_1.scan()
     temperatura = sensor_temperatura_1.read_temp(roms1[0])
 
@@ -138,7 +135,7 @@ if __name__ == "__main__":
 #  |_____/_/\_\___|\___|\__,_|\__\__,_|_| |_|\__,_|\___/  (_)
 #                                                            
     #Ligando visor:
-    lcd.putstr("Carregando...")
+    lcd.puts("Carregando...", 0, 0)
 
     #Existem duas maneiras de inicialização:
     toca_mus = True
