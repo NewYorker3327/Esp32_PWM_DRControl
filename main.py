@@ -12,7 +12,10 @@ from i2c_lcd import I2cLcd
 from ds18x20 import DS18X20
 from onewire import OneWire
         
-def musicas(mus:str, obj):    
+def musicas(mus:str):
+    global pwm
+    obj = pwm
+    
     temp = 8
     if mus == "intro":
         mus = [[392, 200, 2], [392, 400, 3], [523, 200, 2], [523, 400, 3],
@@ -24,6 +27,9 @@ def musicas(mus:str, obj):
     if mus == "exit":
         mus = [[1568+784, 440, 2], [1175+587, 440, 2], [784+523, 440, 2], [587+294, 440, 2],
                [523+392, 440, 2]]
+
+    if mus == "nova":
+        mus = 
 
     for nota in mus:
         globals()['freq']=nota[0]
@@ -47,36 +53,50 @@ def mudar(a:int, b:int, n = 1):
 
 def estatisticas():          
     lcd.clear()
-    lcd.putstr("ESTATISTICAS")
+    lcd.putstr("ESTATISTICAS < nTIPO DE USO")
 
 def tipo_uso():
     lcd.clear()
-    lcd.putstr("TIPO USO")
+    lcd.putstr("ESTATISTICASnTIPO DE USO  <")
 
 def menu_musicas():
     lcd.clear()
-    lcd.putstr("MENU MUSICAS")
+    lcd.putstr("TIPO DE USOnMUSICAS      <")
 
 def avancado():
     lcd.clear()
-    lcd.putstr("AVANCADO")
+    lcd.putstr("MUSICASnMANUAL<")
 
 def interface():
     global telapot, telabot, telabot_2, lcd
 
-    def interar_estatisticas():
+    def solta_botao():
         c = 0
+        while entrar.read():
+            sleep(0.035)
+            c += 1
+            if c % 100 == 0:
+                lcd.clear()
+                lcd.putstr(f"SOLTE O BOTAO!")
+
+    def interar_estatisticas():
+        global tempereratura_global_1, tempereratura_global_2, freq_global, pot_global, limite
+        c = 0
+        estat_antigo = f"FRQ:{freq_global} T1:{int(tempereratura_global_1)}nPOT:{str(pot_global/40*limite)[0:4]} T2:{int(tempereratura_global_2)}" 
         while not sair.value():
             if c % 5 == 0:
-                lcd.clear()
                 c = 0
-                lcd.putstr(f"ESTATISTICAS DENTRO")
-            sleep(0.1)
+                estat = f"FRQ:{freq_global} T1:{int(tempereratura_global_1)}nPOT:{str(pot_global/40*limite)[0:4]} T2:{int(tempereratura_global_2)}" 
+                if estat_antigo != estat:
+                    lcd.clear()
+                    lcd.putstr(estat)
+            sleep(0.02)
         lcd.clear()
 
     def interar_tipo_uso():
+        global modo_global
         modo_antigo = ""
-        sleep(0.3)
+        solta_botao()
         while not sair.value():
             if seta.read() < 4095/2:
                 modo_ = "eco"
@@ -86,22 +106,25 @@ def interface():
             if modo_antigo != modo_:
                 lcd.clear()
                 if modo_ == "turbo":
-                    lcd.putstr(f"TURBO")
+                    lcd.putstr(f" ECO  [TURBO]nBAIXO GASTO")
                 elif modo_ == "eco":
-                    lcd.putstr(f"ECO")
+                    lcd.putstr(f"[ECO]  TURBOnALTO GASTO")
                 modo_antigo = modo_
                     
             
             if not entrar.value():
-                modo = modo_
+                modo_global = modo_
+                lcd.clear()
+                lcd.putstr(f"MODO {modo.upper()}nATIVADO!")
+                sleep(1)
                 break
-            sleep(0.12)
+            sleep(0.06)
         lcd.clear()
             
 
     def interar_menu_musicas():
         m_antigo = ""
-        sleep(0.3)
+        solta_botao()
         while not sair.value():
             if seta.read() < 4095/3:
                 m_ = "m1"
@@ -113,23 +136,23 @@ def interface():
             if m_antigo != m_:
                 lcd.clear()
                 if m_ == "m1":
-                    lcd.putstr("Musica 1")
+                    lcd.putstr("MUSICA:n[1]  2   3 ")
                 elif m_ == "m2":
-                    lcd.putstr("Musica 2")
+                    lcd.putstr("MUSICA:n 1  [2]  3 ")
                 else:
-                    lcd.putstr("Musica 3")
+                    lcd.putstr("MUSICA:n 1   2  [3]")
                 m_antigo = m_                  
             
             if not entrar.value():
                 mus = m_
                 break               
             
-            sleep(0.12)
+            sleep(0.06)
         lcd.clear()
 
     def interar_avancado():
         def controlar_pwm():
-            global potValue1, potValueReal, limite
+            global potValue1, potValueReal, limite, freq_global, pot_global, modo_global
             c_antigo = ""
             while not sair.value():
                 if seta.read() < 4095/2:
@@ -140,74 +163,92 @@ def interface():
                 if c_antigo != c:
                     lcd.clear()
                     if c == "duty":
-                        lcd.putstr("Mudar Duty")
+                        lcd.putstr(f"[DUTY: {str(pot_global/40*limite)[0:4]}%] <<n FREQ: {freq_global}")
                     else:
-                        lcd.putstr("Mudar Freque\ncia")
+                        lcd.putstr(f" DUTY: {str(pot_global/40*limite)[0:4]}% n[FREQ: {freq_global}] <<")
                     c_antigo = c
-                sleep(0.12)
+                sleep(0.06)
 
                 if not entrar.value():
+                    modo_global = "manual"
                     if c ==  "duty":
+                        pot_antiga = 0
+                        ciclos = 0
                         while not sair.value():
-                            potValue1 = seta.read() #Lê o Duty
-                            potValueReal = int(potValue1*0.3 + potValueReal*0.7)
-                            try:
-                                pwm.duty(int(potValueReal/4*limite))
-                            except ValueError:
-                                pwm.duty(1023)
-                            sleep(0.2)
-                            lcd.clear()
-                            lcd.putstr(f"Duty: {str(potValueReal/40*limite)[:4]}%")
-                        sleep(0.3)
+                            pot_global = mudar(seta.read(), pot_global)
+                            if abs(pot_global - pot_antiga) > 10:
+                                try:
+                                    pwm.duty(int(potValueReal/4*limite))
+                                except ValueError:
+                                    pwm.duty(1023)
+                                pot_antiga = pot_global
+                            if abs(pot_global - pot_antiga) > 10 and ciclos % 1000 == 0:
+                                lcd.clear()
+                                lcd.putstr(f" DUTY: {str(pot_global/40*limite)[0:4]}% <<n FREQ: {freq_global}")
+                                ciclos = 1
+                        ciclos += 1
+                        solta_botao()
                     else:
                         freq_antiga = 0
-                        potValueReal = 0
+                        ciclos = 0
                         while not sair.value():
-                            potValue1 = seta.read() #Lê o Duty
-                            potValueReal = int(potValue1*0.3 + potValueReal*0.7)
-                            try:
-                                pwm.freq(int(potValueReal))
-                            except ValueError:
-                                pwm.freq(1)
-                            sleep(0.2)
-                            lcd.clear()
-                            lcd.putstr(f"Freq: {potValueReal}")
-                        sleep(0.3)
+                            freq_global = mudar(seta.read(), freq_global)
+                            if abs(freq_global - freq_antiga) > 10
+                                try:
+                                    pwm.freq(int(freq_global))
+                                except ValueError:
+                                    pwm.freq(1)
+                                freq_antiga = freq_global
+                            if abs(freq_global - freq_antiga) > 10 and ciclos % 1000 == 0:
+                                lcd.clear()
+                                lcd.putstr(f" DUTY: {str(pot_global/40*limite)[0:4]}%n FREQ: {freq_global} <<")
+                                freq_antiga = freq_global
+                                ciclos = 1
+                            ciclos += 1
+                        solta_botao()
                 
     
         s = [0, 0, 0, 0]
         i = 0
-        t_antigo = f"{s[0]} {s[1]} {s[2]} {s[3]}"
+        t_antigo = f"SENHA:n[{s[0]}]{s[1]} {s[2]} {s[3]}"
         while not i < 0:
-            sleep(0.12)
+            sleep(0.06)
             try:
                 s[i] = int(seta.read()/4095*9.9)
             except:
                 i = 0
-            
-            t = f"{s[0]} {s[1]} {s[2]} {s[3]}"
+
+            if i == 0:
+                t = f"SENHA:n[{s[0]}]{s[1]} {s[2]} {s[3]}"
+            elif i == 1:
+                t = f"SENHA:n {s[0]}[{s[1]}]{s[2]} {s[3]}"
+            elif i == 2:
+                t = f"SENHA:n {s[0]} {s[1]}[{s[2]}]{s[3]}"
+            else:
+                t = f"SENHA:n {s[0]} {s[1]} {s[2]}[{s[3]}]"
+                
             if str(t_antigo) != str(t):
                 lcd.clear()
                 t_antigo = t
                 lcd.putstr(t)
                 
-            if s[i] != s[i-1] and not entrar.value():
+            if not entrar.value():
                 i += 1
-                sleep(0.3)
+                solta_botao()
 
             if sair.value():
                 i -= 1
-                sleep(0.3)  
+                solta_botao()  
 
             if i == 4:
                 lcd.clear()
                 if s == [2,9,2,3]:
-                    lcd.putstr("Senha correta!")
+                    lcd.putstr("SENHAnCORRETA!")
                     sleep(1)
                     lcd.clear()
                     controlar_pwm()
                 else:
-                    lcd.putstr("Senha incorreta!")
+                    lcd.putstr("SENHAnINCORRETA!")
                     sleep(1)
                     lcd.clear()
                     i = 0
@@ -256,7 +297,7 @@ def interface():
                 interar_avancado()
                 uso_antigo = ""
 
-        sleep(0.12)
+        sleep(0.06)
                 
 if __name__ == "__main__":
 #   ____        __ _       _      /\/|               
@@ -318,10 +359,11 @@ if __name__ == "__main__":
 #  |_____/_/\_\___|\___|\__,_|\__\__,_|_| |_|\__,_|\___/  (_)
 #                                                            
 
-    #Existem duas maneiras de inicialização:
+    #Globais:
     toca_mus = True
-    freq = 665
-    _t_3 = "."
+    freq_global = 1
+    pot_global = 1
+    modo_global = "eco"
     pausa_de_seguranca = False
 
     #Ativando leituras em threads:
@@ -334,50 +376,41 @@ if __name__ == "__main__":
             if c % 100 == 0:
                 c = 0
             sleep(0.1)
-    _thread.start_new_thread(plots,())
-    _thread.start_new_thread(interface,())
-    
-##    #Se telabot for 0 a saída h9 é 665 e o duty cycle
-##    if telabot.value():        
-##        pwm.freq(freq)
-##        toca_mus = False
-##        
-##    print(telabot.value())
-##
-##    #Se em 5 segundos o telabot é off o toca_mus é on:
-##    if toca_mus:
-##        print("Tocando musica")
-##        musicas("intro", pwm)        
+            
+    #_thread.start_new_thread(plots,())
+    _thread.start_new_thread(interface,())      
         
     #Loop principal:
-    freq = 665
     contagem = 0    
     while True:
         contagem += 1
-##        if temperatura_de_seguranca > 60 or pausa_de_seguranca:
-##            pwm.duty(0)
-##            pwm.freq(1)
-##            pausa_de_seguranca = True
-##            pwm_block = True
-##            if temperatura_de_seguranca < 40:
-##                pausa_de_seguranca = False
-##                pwm_block = False
-##                pwm.freq(665)
-                
-##        if pwm_block == False: 
-##            potValue1 = telapot.read() #Lê o Duty
-##            potValueReal = mudar(potValue1, potValueReal)
-
-##        if not pausa_de_seguranca:
-##            try:
-##                pwm.duty(int(potValueReal/4*limite))
-##            except ValueError:
-##                pwm.duty(1023)
 
         if contagem % 3000 == 0:
             contagem = 0
             sensor_temperatura_1.convert_temp()
-##            sensor_temperatura_2.convert_temp()
+            sensor_temperatura_2.convert_temp()
             temperatura = sensor_temperatura_1.read_temp(roms1[0])
-##            temperatura_de_seguranca = sensor_temperatura_2.read_temp(roms2[0])
-##            print(temperatura)
+            temperatura_de_seguranca = sensor_temperatura_2.read_temp(roms2[0])
+
+        if temperatura_de_seguranca > 60 or modo_global == "resfriar":
+            if modo_global != "resfriar":
+                backup_modo_global = modo_global
+                pwm.freq(1)
+                pwm.pot(0)
+                lcd.clear()
+                lcd.putstr("RESFRIANDO!")
+                sleep(3)
+                
+            modo_global = "resfriar"
+
+            if temperatura_de_seguranca < 40:
+                modo_global = backup_modo_global
+
+        if not modo_global == "resfriar" and not modo_global == "manual":
+            if modo_global == "eco":
+                pwm.freq(665)
+                pwm.pot(100)
+            elif modo_global == "turbo":
+                pwm.freq(665)
+                pwm.pot(200)
+            
