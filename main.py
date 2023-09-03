@@ -142,8 +142,9 @@ def interface():
                     if c == "duty":
                         lcd.putstr("Mudar Duty")
                     else:
-                        lcd.putstr("Mudar Frequencia")
+                        lcd.putstr("Mudar Freque\ncia")
                     c_antigo = c
+                sleep(0.12)
 
                 if not entrar.value():
                     if c ==  "duty":
@@ -156,7 +157,8 @@ def interface():
                                 pwm.duty(1023)
                             sleep(0.2)
                             lcd.clear()
-                            lcd.putstr(f"Duty: {potValueReal}")
+                            lcd.putstr(f"Duty: {str(potValueReal/4*limite)[:4]}%")
+                        sleep(0.3)
                     else:
                         freq_antiga = 0
                         potValueReal = 0
@@ -170,6 +172,7 @@ def interface():
                             sleep(0.2)
                             lcd.clear()
                             lcd.putstr(f"Freq: {potValueReal}")
+                        sleep(0.3)
                 
     
         s = [0, 0, 0, 0]
@@ -177,7 +180,10 @@ def interface():
         t_antigo = f"{s[0]} {s[1]} {s[2]} {s[3]}"
         while not i < 0:
             sleep(0.12)
-            s[i] = int(seta.read()/4095*9.9)
+            try:
+                s[i] = int(seta.read()/4095*9.9)
+            except:
+                i = 0
             
             t = f"{s[0]} {s[1]} {s[2]} {s[3]}"
             if str(t_antigo) != str(t):
