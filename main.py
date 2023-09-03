@@ -157,7 +157,7 @@ def interface():
                                 pwm.duty(1023)
                             sleep(0.2)
                             lcd.clear()
-                            lcd.putstr(f"Duty: {str(potValueReal/4*limite)[:4]}%")
+                            lcd.putstr(f"Duty: {str(potValueReal/40*limite)[:4]}%")
                         sleep(0.3)
                     else:
                         freq_antiga = 0
