@@ -150,7 +150,7 @@ def interface():
                     if c ==  "duty":
                         while not sair.value():
                             potValue1 = seta.read() #Lê o Duty
-                            potValueReal = int(potValue1*0.01 + potValueReal*0.90)
+                            potValueReal = int(potValue1*0.3 + potValueReal*0.7)
                             try:
                                 pwm.duty(int(potValueReal/4*limite))
                             except ValueError:
@@ -164,7 +164,7 @@ def interface():
                         potValueReal = 0
                         while not sair.value():
                             potValue1 = seta.read() #Lê o Duty
-                            potValueReal = mudar(potValue1, potValueReal)
+                            potValueReal = int(potValue1*0.3 + potValueReal*0.7)
                             try:
                                 pwm.freq(int(potValueReal))
                             except ValueError:
