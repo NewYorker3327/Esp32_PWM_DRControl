@@ -129,6 +129,7 @@ def interface():
 
     def interar_avancado():
         def controlar_pwm():
+            global potValue1, potValueReal, limite
             c_antigo = ""
             while not sair.value():
                 if seta.read() < 4095/2:
@@ -146,10 +147,7 @@ def interface():
 
                 if not entrar.value():
                     if c ==  "duty":
-                        freq_antiga = 0
-                        potValueReal = 0
                         while not sair.value():
-                            lcd.clear()
                             potValue1 = seta.read() #Lê o Duty
                             potValueReal = mudar(potValue1, potValueReal)
                             try:
@@ -157,19 +155,20 @@ def interface():
                             except ValueError:
                                 pwm.duty(1023)
                             sleep(0.2)
+                            lcd.clear()
                             lcd.putstr(f"Duty: {potValueReal}")
                     else:
-                        lcd.clear()
                         freq_antiga = 0
                         potValueReal = 0
                         while not sair.value():
                             potValue1 = seta.read() #Lê o Duty
                             potValueReal = mudar(potValue1, potValueReal)
                             try:
-                                pwm.freq(int(potValueReal/4*limite))
+                                pwm.freq(int(potValueReal))
                             except ValueError:
                                 pwm.freq(1)
                             sleep(0.2)
+                            lcd.clear()
                             lcd.putstr(f"Freq: {potValueReal}")
                 
     
