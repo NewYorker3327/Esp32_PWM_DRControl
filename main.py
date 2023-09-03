@@ -38,11 +38,11 @@ def mod(a:int):
         return -a
     return a
 
-def mudar(a:int, b:int):
+def mudar(a:int, b:int, n = 1):
     if a > b:
-        return b + 1
+        return b + n
     if a < b:
-        return b - 1
+        return b - n
     return b
 
 def estatisticas():          
@@ -150,7 +150,7 @@ def interface():
                     if c ==  "duty":
                         while not sair.value():
                             potValue1 = seta.read() #Lê o Duty
-                            potValueReal = mudar(potValue1, potValueReal)
+                            potValueReal = int(potValue1*0.01 + potValueReal*0.90)
                             try:
                                 pwm.duty(int(potValueReal/4*limite))
                             except ValueError:
