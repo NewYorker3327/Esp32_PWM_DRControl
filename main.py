@@ -28,12 +28,19 @@ def musicas(mus:str):
         mus = [[1568+784, 440, 2], [1175+587, 440, 2], [784+523, 440, 2], [587+294, 440, 2],
                [523+392, 440, 2]]
 
-    if mus == "nova":
-        mus = 
+    if mus == "zelda":
+        mus = [[665, 200, 6], [498, 200, 6], [665, 200, 4], [746, 200, 2],
+               [791, 200, 2], [888, 200, 2], [996, 200, 16], [1118, 200, 2],
+               [1255, 200, 16], [1118, 200, 2], [996, 200, 2], [1118, 200, 4],
+               [996, 200, 2], [1118, 200, 4], [996, 200, 2], [940, 200, 8],
+               [838, 200, 4], [888, 200, 4], [1056, 200, 2], [940, 200, 2],
+               [888, 200, 2], [791, 200, 4], [888, 200, 2], [996, 200, 8],
+               [888, 200, 2], [791, 200, 2], [746, 200, 4], [838, 200, 2],
+               [888, 200, 8], [16, 200, 8], [996, 200, 8]]
 
     for nota in mus:
-        globals()['freq']=nota[0]
-        globals()['potValueReal']=nota[1]
+        globals()['freq'] = nota[0]
+        globals()['potValueReal'] = nota[1]
         obj.freq(nota[0])
         obj.duty(nota[1])
         sleep(nota[2]/temp)
@@ -127,11 +134,11 @@ def interface():
         solta_botao()
         while not sair.value():
             if seta.read() < 4095/3:
-                m_ = "m1"
+                m_ = "intro"
             elif seta.read() < 4095/3 * 2:
-                m_ = "m2"
+                m_ = "exit"
             else:
-                m_ = "m3"
+                m_ = "zelda"
 
             if m_antigo != m_:
                 lcd.clear()
@@ -144,7 +151,10 @@ def interface():
                 m_antigo = m_                  
             
             if not entrar.value():
+                lcd.clear()
+                lcd.putstr("TOCANDO...")
                 mus = m_
+                musicas(m_)                
                 break               
             
             sleep(0.06)
