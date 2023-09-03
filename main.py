@@ -357,9 +357,9 @@ if __name__ == "__main__":
     roms1 = sensor_temperatura_1.scan()
     temperatura = sensor_temperatura_1.read_temp(roms1[0])
 
-##    sensor_temperatura_2 = DS18X20(OneWire(Pin(17)))
-##    roms2 = sensor_temperatura_2.scan()
-##    temperatura_de_seguranca = sensor_temperatura_2.read_temp(roms2[0])
+    sensor_temperatura_2 = DS18X20(OneWire(Pin(5)))
+    roms2 = sensor_temperatura_2.scan()
+    temperatura_de_seguranca = sensor_temperatura_2.read_temp(roms2[0])
     
     
 #   _____                     _                  _           
