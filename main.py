@@ -471,11 +471,11 @@ if __name__ == "__main__":
     lcd = I2cLcd(i2c, DEFALT_I2C_ADDR, 2, 16)
 
     #Para o sensor de temperatura ds18x20:
-    sensor_temperatura_1 = DS18X20(OneWire(Pin(17)))
+    sensor_temperatura_1 = DS18X20(OneWire(Pin(5)))
     roms1 = sensor_temperatura_1.scan()
     temperatura = sensor_temperatura_1.read_temp(roms1[0])
 
-    sensor_temperatura_2 = DS18X20(OneWire(Pin(5)))
+    sensor_temperatura_2 = DS18X20(OneWire(Pin(17)))
     roms2 = sensor_temperatura_2.scan()
     temperatura_de_seguranca = sensor_temperatura_2.read_temp(roms2[0])
     
