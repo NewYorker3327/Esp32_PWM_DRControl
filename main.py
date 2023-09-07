@@ -20,11 +20,15 @@ def passar_nota(n):
     return int(220 * 2 ** (n/12))
 
 def musicas(mus:str):
-    global pwm, modo_global
+    global pwm, modo_global, modo_atual, freq_global, pot_global
     obj = pwm
+
+    pot_antigo = pot_global
+    freq_antigo = freq_global
 
     backup = modo_global
     modo_global == "musica"
+    modo_atual = modo_global
     
     if mus == "intro":
         temp = 8
@@ -53,7 +57,7 @@ def musicas(mus:str):
         mus = [[1, v, 2], [8, v, 2], [15, v, 2], [16, v, 6], [1, v, 2], [8, v, 2], [15, v, 2], [16, v, 6], [1, v, 2], [8, v, 2], [15, v, 2], [16, v, 6],
                [[1,8], v, 2], [8, v, 2], [[15, 8], v, 2], [[16, 8], v, 2], [16, v, 4],
                [[-1,8], v, 2], [8, v, 2], [[15, 8], v, 2], [[16, 8], v, 2], [16, v, 4],
-               [[-3,8], v, 2], [8, v, 2], [[15, 8], v, 2], [[16, v, 8], 2], [16, v, 4],
+               [[-3,8], v, 2], [8, v, 2], [[15, 8], v, 2], [[16, 8], v, 2], [16, v, 4],
                [[3,6], v, 4], [[1, 4], v, 4], [[-1, 2], v, 4],
                [1, v, 8], [-1, v, 2], [6, v, 2], [1, v, 8], [-1, v, 2], [8, v, 2],
                [4, v, 8], [8, v, 2], [6, v, 2], [8, v, 8]]
@@ -63,23 +67,28 @@ def musicas(mus:str):
             resp = 0
             for n_individual in nota[0]:
                 resp += passar_nota(n_individual)
-            globals()['freq'] = resp
-            globals()['potValueReal'] = nota[1]
+            freq_global = resp
+            pot_global = nota[1]
             obj.freq(resp)
             obj.duty(nota[1])
             sleep(nota[2]/temp)
         elif nota[0] < 30:
-            globals()['freq'] = passar_nota(nota[0])
-            globals()['potValueReal'] = nota[1]
+            freq_global = nota[0]
+            pot_global = nota[1]
             obj.freq(passar_nota(nota[0]))
             obj.duty(nota[1])
             sleep(nota[2]/temp)
         else:
-            globals()['freq'] = nota[0]
-            globals()['potValueReal'] = nota[1]
+            freq_global = nota[0]
+            pot_global = nota[1]
             obj.freq(nota[0])
             obj.duty(nota[1])
             sleep(nota[2]/temp)
+
+    freq_global = freq_antigo
+    pot_global = pot_antigo
+    obj.freq(int(300 + int(freq_global/1.517)))
+    obj.duty(int(pot_global/4*limite))
 
     modo_global = backup
 
@@ -123,32 +132,24 @@ def avancado():
 
 def tela_descanso():
     global lcd, telapot, telabot, telabot_2, freq_global, pot_global, temperatura_global_1, temperatura_global_2
-    estat_antigo = f"FRQ:{int(300 + int(freq_global/1.517))-1} T1:{int(temperatura_global_1)}nDUTY:{int(pot_global/4*limite + 0.9)}% T2:{int(temperatura_global_2)}"
     pot_antigo = telapot.read()
     c = 0
     while abs(pot_antigo - telapot.read()) < 10 and telabot.value() and not telabot_2.value():
-        if c % 10 == 0:
-            estat = f"FRQ:{int(300 + int(freq_global/1.517))} T1:{int(temperatura_global_1)}nDUTY:{int(pot_global/4*limite + 0.9)}% T2:{int(temperatura_global_2)}" 
-            if estat_antigo != estat:
-                lcd.clear()
-                lcd.putstr(estat)
-                estat_antigo = estat
-        if c % 20 == 0:
-            estat = f"  AGROMAG  nDUTY:{int(pot_global/4*limite + 0.9)}% T2:{int(temperatura_global_2)}" 
-            if estat_antigo != estat:
-                lcd.clear()
-                lcd.putstr(estat)
-                estat_antigo = estat
-        if c % 30 == 0:
+        if c == 10:
+            estat = f"FRQ:{int(300 + int(freq_global/1.517))} T1:{int(temperatura_global_1)}nDUTY:{int(pot_global/40*limite + 0.9)}% T2:{int(temperatura_global_2)}" 
+            lcd.clear()
+            lcd.putstr(estat)
+        elif c == 20:
+            estat = f"  AGROMAG  nDUTY:{int(pot_global/40*limite + 0.9)}% T2:{int(temperatura_global_2)}" 
+            lcd.clear()
+            lcd.putstr(estat)
+        elif c == 30:
             estat = f"FRQ:{int(300 + int(freq_global/1.517))} T1:{int(temperatura_global_1)}n  AGROMAG" 
-            if estat_antigo != estat:
-                lcd.clear()
-                lcd.putstr(estat)
-                estat_antigo = estat
-            C = 1
-        C += 1
-        sleep(0.15)
-        lcd.clear()
+            lcd.clear()
+            lcd.putstr(estat)
+            c = 1
+        c += 1
+        sleep(0.3)
 
 def vai_tela_descanso():
     global telapot, lcd
@@ -184,11 +185,11 @@ def interface():
         global temperatura_global_1, temperatura_global_2, freq_global, pot_global, limite
         c = 0
         solta_botao()
-        estat_antigo = f"FRQ:{int(300 + int(freq_global/1.517))-1} T1:{int(temperatura_global_1)}nDUTY:{int(pot_global/4*limite + 0.9)}% T2:{int(temperatura_global_2)}" 
+        estat_antigo = f"FRQ:{int(300 + int(freq_global/1.517))-1} T1:{int(temperatura_global_1)}nDUTY:{int(pot_global/40*limite + 0.9)}% T2:{int(temperatura_global_2)}" 
         while not sair.value():
             if c % 5 == 0:
                 c = 0
-                estat = f"FRQ:{int(300 + int(freq_global/1.517))} T1:{int(temperatura_global_1)}nDUTY:{int(pot_global/4*limite + 0.9)}% T2:{int(temperatura_global_2)}" 
+                estat = f"FRQ:{int(300 + int(freq_global/1.517))} T1:{int(temperatura_global_1)}nDUTY:{int(pot_global/40*limite + 0.9)}% T2:{int(temperatura_global_2)}" 
                 if estat_antigo != estat:
                     lcd.clear()
                     lcd.putstr(estat)
@@ -244,7 +245,7 @@ def interface():
                 lcd.clear()
                 if m_ == "intro":
                     lcd.putstr("MUSICA:n[1]  2   3 ")
-                elif m_ == "exit":
+                elif m_ == "fef":
                     lcd.putstr("MUSICA:n 1  [2]  3 ")
                 else:
                     lcd.putstr("MUSICA:n 1   2  [3]")
@@ -284,49 +285,45 @@ def interface():
                     lcd.clear()
                     solta_botao()
                     if c ==  "duty":
-                        pot_antiga_1 = 0
-                        pot_antiga_2 = 0
+                        pot_antiga = 0
                         ciclos = 0
                         pot_visor = pot_global
                         while not sair.value():
                             pot_visor = mudar(seta.read(), pot_visor, 1)
                             if not entrar.value() and modo_global == "manual":
+                                pot_global = pot_visor
                                 try:
                                     pwm.duty(int(pot_global/4*limite))
                                 except ValueError:
                                     pwm.duty(1023)
-                                pot_global = pot_visor
-                                pot_antiga_1 = pot_global
                                 lcd.clear()
                                 lcd.putstr(f"DUTY: {str(pot_global/40*limite)[0:4]}% <<nDUTY SETADO!")
                                 sleep(1)
-                            if abs(pot_visor - pot_antiga_2) > 10 and ciclos % 1000 == 0:
+                            if abs(pot_visor - pot_antiga) > 10 and ciclos % 2_000 == 0:
                                 lcd.clear()
                                 lcd.putstr(f"DUTY: {str(pot_visor/40*limite)[0:4]}% <<nFREQ: {int(300 + int(freq_global/1.517))}")
+                                pot_antiga = pot_visor
                                 ciclos = 1
-                                pot_antiga_2 = pot_visor
                             ciclos += 1
                     else:
-                        freq_antiga_1 = 0
-                        freq_antiga_2 = 0
-                        freq_visor = freq_global
+                        freq_antiga = 0
                         ciclos = 0
+                        freq_visor = freq_global
                         while not sair.value():
-                            freq_global = mudar(seta.read(), freq_global, 1)
+                            freq_visor = mudar(seta.read(), freq_visor, 1)
                             if not entrar.value() and modo_global == "manual":
+                                freq_global = freq_visor
                                 try:
                                     pwm.freq(int(300 + int(freq_global/1.517)))
                                 except ValueError:
                                     pwm.freq(1)
-                                freq_global = freq_visor
-                                freq_antiga_1 = freq_global
                                 lcd.clear()
                                 lcd.putstr(f"FREQ SETADA!nFREQ: {int(300 + int(freq_global/1.517))} <<")
                                 sleep(1)
-                            if abs(freq_visor - freq_antiga_2) > 10 and ciclos % 1000 == 0:
+                            if abs(freq_visor - freq_antiga) > 10 and ciclos % 2_000 == 0:
                                 lcd.clear()
                                 lcd.putstr(f"DUTY: {str(pot_global/40*limite)[0:4]}%nFREQ: {int(300 + int(freq_visor/1.517))} <<")
-                                freq_antiga_2 = freq_visor
+                                freq_antiga = freq_visor
                                 ciclos = 1
                             ciclos += 1
                     lcd.clear()
@@ -532,19 +529,19 @@ if __name__ == "__main__":
             if temperatura_de_seguranca < 40:
                 modo_global = backup_modo_global
 
-        if not modo_global == "resfriar" and not modo_global == "manual":
+        if not modo_global == "resfriar" and not modo_global == "manual" and not modo_global == "musica":
             if modo_global == "eco" and modo_atual != modo_global:
                 pwm.freq(665)
-                pwm.duty(100)
+                pwm.duty(int(500/4*limite))
                 freq_global = 554 # 554/1.517 + 300 = 665
-                pot_global = 100
+                pot_global = 500
                 modo_atual = modo_global
                 
             elif modo_global == "turbo" and modo_atual != modo_global:
                 pwm.freq(665)
-                pwm.duty(200)
+                pwm.duty(int(1000/4*limite))
                 freq_global = 554
-                pot_global = 200
+                pot_global = 1000
                 modo_atual = modo_global
 
             elif modo_global == "off" and modo_atual != modo_global:
