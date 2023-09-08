@@ -135,21 +135,21 @@ def tela_descanso():
     pot_antigo = telapot.read()
     c = 0
     while abs(pot_antigo - telapot.read()) < 10 and telabot.value() and not telabot_2.value():
-        if c == 10:
+        if c == 20:
             estat = f"FRQ:{int(300 + int(freq_global/1.517))} T1:{int(temperatura_global_1)}nDUTY:{int(pot_global/40*limite + 0.9)}% T2:{int(temperatura_global_2)}" 
             lcd.clear()
             lcd.putstr(estat)
-        elif c == 20:
+        elif c == 40:
             estat = f"  AGROMAG  nDUTY:{int(pot_global/40*limite + 0.9)}% T2:{int(temperatura_global_2)}" 
             lcd.clear()
             lcd.putstr(estat)
-        elif c == 30:
+        elif c == 60:
             estat = f"FRQ:{int(300 + int(freq_global/1.517))} T1:{int(temperatura_global_1)}n  AGROMAG" 
             lcd.clear()
             lcd.putstr(estat)
             c = 1
         c += 1
-        sleep(0.3)
+        sleep(0.1)
 
 def vai_tela_descanso():
     global telapot, lcd
