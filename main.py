@@ -280,7 +280,12 @@ def interface():
                     c_antigo = c
                 sleep(0.06)
 
-                if not entrar.value():
+                if not entrar.value() and modo_global == "resfriar":
+                    lcd.clear()
+                    lcd.putstr("ESPEREnRESFRIAR...")
+                    sleep(1)
+
+                if not entrar.value() and modo_global != "resfriar":
                     modo_global = "manual"
                     lcd.clear()
                     solta_botao()
@@ -510,6 +515,26 @@ if __name__ == "__main__":
             temperatura = sensor_temperatura_1.read_temp(roms1[0])
             temperatura_de_seguranca = sensor_temperatura_2.read_temp(roms2[0])
             temperatura_global_1, temperatura_global_2 = temperatura, temperatura_de_seguranca
+
+        if type(temperatura_global_1) == None:
+            for _ in range(3):
+                lcd.clear()
+                lcd.putstr("SENSOR 1nDESCONECTADO!")
+                sleep(1)
+                lcd.clear()
+                lcd.putstr("ENTRANDOnMODO SEGURANCA")
+                sleep(1)
+            temperatura_de_seguranca = 61
+
+        if type(temperatura_global_2) == None:
+            for _ in range(3):
+                lcd.clear()
+                lcd.putstr("SENSOR 2nDESCONECTADO!")
+                sleep(1)
+                lcd.clear()
+                lcd.putstr("ENTRANDOnMODO SEGURANCA")
+                sleep(1)
+            temperatura_de_seguranca = 61
 
         if temperatura_de_seguranca > 60 or modo_global == "resfriar":
             if modo_global != "resfriar":
