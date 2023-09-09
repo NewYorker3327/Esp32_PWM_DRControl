@@ -13,6 +13,14 @@ from i2c_lcd import I2cLcd
 from ds18x20 import DS18X20
 from onewire import OneWire
 
+#Wifi:
+import network
+import socket
+
+#Temperatuda da propria esp
+import esp32
+#esp32.raw_temperature()
+
 def voltar(k, log2 = log2, limite_inf = 440):
     return int(12*log2(k/limite_inf))
 
@@ -167,6 +175,62 @@ def vai_tela_descanso():
         t4 = int(telapot.read()/10)
         if t1 == t2 == t3 == t4:
             tela_descanso()
+
+def tela_web():
+    global modo_global, ip_global, wifi_global, temperatura_global_1, temperatura_global_2, freq_global, pot_global, limite
+
+    def pagina_web():
+        temperatura_placa = str((esp32.raw_temperature() - 32) * 5/9)
+        html = """
+    <html>   
+        <head>   
+            <meta content="width=device-width, initial-scale=1" name="viewport"></meta>   
+        </head>   
+        <body>   
+            <center><h2>AGROMAG</h2></center>   
+                <center>   
+                 <form>   
+                  <button name="MODO" type="submit" value="0"> OFF </button>   
+                  <button name="MODO" type="submit" value="1"> ECO </button>
+                  <button name="MODO" type="submit" value="2"> TURBO </button>  
+                 </form>   
+                </center>   
+            <center><p>Modo atual: <strong>""" + str(modo_global) + """</strong>.</p></center>
+            <center><p>Frequência: <strong>""" + str(freq_global) + """</strong>.</p></center>
+            <center><p>Potência: <strong>""" + str(pot_global) + """</strong>.</p></center>
+            <center><p>Temperatura saída: <strong>""" + str(temperatura_global_1) + """</strong>.</p></center>
+            <center><p>Temperatura da Placa: <strong>""" + str(temperatura_global_2) + """</strong>.</p></center>
+            <center><p>Temperatura do Processador: <strong>""" + str(temperatura_placa) + """</strong>.</p></center>
+        </body>   
+        </html>  
+"""
+        return html
+
+    soc = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    soc.bind(("", 80))
+    soc.listen(5)
+    
+    while True:
+        sleep(10)
+        if modo_global != "manual" and modo_global != "resfriar" and modo_global != "musica":
+            conn, addr = soc.accept()
+
+            request = str(conn.recv(1024))
+            if request.find("\?MODO=0") > 1:
+                modo_global = "off"
+            elif request.find("\?MODO=1") > 1:
+                modo_global = "off"
+            elif request.find("\?MODO=2") > 1:
+                modo_global = "turbo"
+
+            response = pagina_web()
+            conn.send('HTTP/1.1 200 OK\n')
+            conn.send('Content-Type: text/html\n')
+            conn.send('Connection: close\n\n')
+            conn.sendall(response)
+
+            conn.close()
+        
 
 def interface():
     global telapot, telabot, telabot_2, lcd
@@ -334,8 +398,7 @@ def interface():
                     lcd.clear()
                     c_antigo = ""
                     sleep(0.3)
-                
-    
+                    
         s = [0, 0, 0, 0]
         i = 0
         t_antigo = f"SENHA:n[{s[0]}]{s[1]} {s[2]} {s[3]}"
@@ -380,7 +443,65 @@ def interface():
                     sleep(1)
                     lcd.clear()
                     i = 0
-                    s = [0, 0, 0, 0]        
+                    s = [0, 0, 0, 0]
+
+    def connect_wifi(network = network):
+        global net_global, ip_global
+
+        if net_global == None:
+            lcd.clear()
+            lcd.putstr("LIGANDO WIFI...")
+            net_global = network.WLAN(network.STA_IF)
+            net_global.active()
+
+        if net_global != None:
+            if not net_global.isconnected()
+                lcd.clear()
+                lcd.putstr("ESCANEANDOnREDE...")
+                list_of_wifi = net_global.scan()
+
+                wifi = []
+                for wifi_ in list_of_wifi:
+                    if wifi_[3] == 0:
+                        wifi.append(wifi_)
+                lw = len(wifi)
+
+                t = ""
+                while not sair.value():
+                    for i in range(lw):
+                        if 4095/lw * i <= seta.read() < 4095/lw * (i + 1):
+                            t_novo = f"REDE {i+1} de {lw}n{wifi[i][0].replace('n','N')[:16]}"
+                            i_ = i
+
+                    if t != t_novo:                          
+                        lcd.clear()
+                        lcd.putstr(t)
+                        t = t_novo
+
+                    if not entrar.value():
+                        wifi_to_connect = wifi[i]
+                        break
+
+                    sleep(0.06)
+
+
+                sta.connect(wifi_to_connect[0])
+                if net_global.isconnected() :
+                    lcd.clear()
+                    lcd.putstr("WIFI CONECTADO!")
+                    sleep(1)
+                ip_global = net_global.ifconfig()
+                
+            if net_global.isconnected():
+                c = 0
+                while not sair.value():
+                    if c % 20 == 0:
+                        lcd.clear()
+                        lcd.putstr(F"ENTRE EM:n{ip_global[0]}")
+                        c = 0
+                    c += 1
+                    sleep(0.06)
+        
 
     seta = telapot
     entrar = telabot
@@ -436,8 +557,6 @@ if __name__ == "__main__":
 #                             )_)                    
     ###Variável limite duty (1=100%):
     limite = 0.35
-
-    temperatura_global_1, temperatura_global_2 = 0, 0
     
     ###Saídas:
     h6 = 13 #(era 27) #Pré-carga
@@ -496,10 +615,14 @@ if __name__ == "__main__":
     modo_global = "off"
     modo_atual = ""
     pausa_de_seguranca = False
+    net_global = None
+    ip_global = None
+    temperatura_global_1, temperatura_global_2 = 0, 0
             
     #_thread.start_new_thread(plots,())
     _thread.start_new_thread(interface,())
     _thread.start_new_thread(vai_tela_descanso,())
+    _thread.start_new_thread(tela_web,())
     
     #Loop principal:
     contagem = 0  
@@ -514,7 +637,7 @@ if __name__ == "__main__":
             sensor_temperatura_2.convert_temp()
             temperatura = sensor_temperatura_1.read_temp(roms1[0])
             temperatura_de_seguranca = sensor_temperatura_2.read_temp(roms2[0])
-            temperatura_global_1, temperatura_global_2 = temperatura, temperatura_de_seguranca
+            temperatura_global_1, temperatura_global_2 = temperatura, temperatura_de_seguranca            
 
         if type(temperatura_global_1) == None:
             for _ in range(3):
