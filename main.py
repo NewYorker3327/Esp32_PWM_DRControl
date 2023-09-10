@@ -100,6 +100,22 @@ def musicas(mus:str):
 
     modo_global = backup
 
+def automatizacao_web():
+    global automatizacao, modo_global, lcd
+    
+    while True:
+        automatizacao_nova = automatizacao
+        if automatizacao != []:
+            lcd.clear()
+            lcd.putstr("MODOnAUTOMATICO")
+            for m, t in automatizacao_nova:
+                modo_global = m
+                for _ in range(60):
+                    sleep(m)
+                    if automatizacao_nova != automatizacao:
+                        break
+                
+
 def mod(a:int):
     if a < 0:
         return -a
@@ -181,10 +197,13 @@ def vai_tela_descanso():
             tela_descanso()
 
 def tela_web():
-    global modo_global, ip_global, wifi_global, temperatura_global_1, temperatura_global_2, freq_global, pot_global, limite
+    global modo_global, ip_global, wifi_global, temperatura_global_1, temperatura_global_2, freq_global, pot_global, limite, automatizado
 
     def pagina_web():
         temperatura_placa = str((esp32.raw_temperature() - 32) * 5/9)
+
+        acoes = [f"<tr>{x[0]}<tr> <tr>{x[1]}<tr> <tr>{x[2]}<tr> <tr>{x[3]}<tr>" for x in automatizado]
+        
         html = """
     <html>   
         <head>   
@@ -200,11 +219,74 @@ def tela_web():
                  </form>   
                 </center>   
             <center><p>Modo atual: <strong>""" + str(modo_global) + """</strong>.</p></center>
-            <center><p>Frequência: <strong>""" + str(freq_global) + """</strong>.</p></center>
-            <center><p>Potência: <strong>""" + str(pot_global) + """</strong>.</p></center>
+            <center><p>Frequência: <strong>""" + str(int(300 + int(freq_global/1.517))-1) + """</strong>.</p></center>
+            <center><p>Potência: <strong>""" + str(int(pot_global/40*limite + 0.9)) + """</strong>.</p></center>
             <center><p>Temperatura saída: <strong>""" + str(temperatura_global_1) + """</strong>.</p></center>
             <center><p>Temperatura da Placa: <strong>""" + str(temperatura_global_2) + """</strong>.</p></center>
             <center><p>Temperatura do Processador: <strong>""" + str(temperatura_placa) + """</strong>.</p></center>
+
+            <br><\br>
+
+            <input type="checkbox" id="automatizar" name="automatizar" value="1">
+            <label for="vehicle1">Rodar automatização definida abaixo</label><br>
+              
+            <label for="modo1">Ação 1 MODO e TEMPO (em minutos):</label>
+            <select id="modo1" name="modo1">
+            <option value="nada1" selected>NADA</option>
+                <option value="off1">OFF</option>
+                <option value="eco1">ECO</option>
+                <option value="turbo1">TURBO</option>
+              </select>
+              <input type="number" id="tempo1" name="tempo1" min="1" max="4320" value="1">
+
+            <label for="modo2">Ação 2 MODO e TEMPO (em minutos):</label>
+            <select id="modo2" name="modo1">
+            <option value="nada2" selected>NADA</option>
+                <option value="off2">OFF</option>
+                <option value="eco2">ECO</option>
+                <option value="turbo2">TURBO</option>
+              </select>
+              <input type="number" id="tempo2" name="tempo2" min="1" max="4320" value="1">
+
+            <label for="modo3">Ação 3 MODO e TEMPO (em minutos):</label>
+            <select id="modo3" name="modo1">
+            <option value="nada3" selected>NADA</option>
+                <option value="off3">OFF</option>
+                <option value="eco3">ECO</option>
+                <option value="turbo3">TURBO</option>
+              </select>
+              <input type="number" id="tempo3" name="tempo3" min="1" max="4320" value="1">
+
+            <label for="modo4">Ação 4 MODO e TEMPO (em minutos):</label>
+            <select id="modo4" name="modo1">
+            <option value="nada4" selected>NADA</option>
+                <option value="off4">OFF</option>
+                <option value="eco4">ECO</option>
+                <option value="turbo4">TURBO</option>
+              </select>
+              <input type="number" id="tempo4" name="tempo4" min="1" max="4320" value="1">
+
+            <label for="modo5">Ação 5 MODO e TEMPO (em minutos):</label>
+            <select id="modo5" name="modo1">
+            <option value="nada5" selected>NADA</option>
+                <option value="off5">OFF</option>
+                <option value="eco5">ECO</option>
+                <option value="turbo5">TURBO</option>
+              </select>
+              <input type="number" id="tempo5" name="tempo5" min="1" max="4320" value="1">
+
+            <br><\br>
+            
+            <h2>Automazização Atual:</h2>
+            <table style="width:100%">
+              <tr>
+                <th>Ação</th>
+                <th>Modo</th> 
+                <th>Tempo Dessa Ação (Minutos)</th>
+                <th>Ativa no Momento</th>
+              </tr>""" + acoes + """
+            </table>
+
         </body>   
         </html>  
 """
@@ -226,6 +308,39 @@ def tela_web():
                 modo_global = "off"
             elif request.find("\?MODO=2") > 1:
                 modo_global = "turbo"
+
+            at = []
+            if request.find(f"\?automatizar=1") > 1:
+                for i in range(1, 5 + 1):
+                    if request.find(f"\?modo{i}=off{i}") > 1:
+                        p = request.find(f"\?tempo{i}=")
+                        lp = len("\?tempo1=")
+                        t = request[p + lp: p + lp + 4]
+                        ft = ""
+                        for i in t:
+                            if ord("0") <= ord(i) <= ord("9"):
+                                ft += i
+                        at.append(["off", ft])
+                    elif request.find(f"\?modo{i}=eco{i}") > 1:
+                        p = request.find(f"\?tempo{i}=")
+                        lp = len("\?tempo1=")
+                        t = request[p + lp: p + lp + 4]
+                        ft = ""
+                        for i in t:
+                            if ord("0") <= ord(i) <= ord("9"):
+                                ft += i
+                        at.append(["off", ft])
+                    elif request.find(f"\?modo{i}=turbo{i}") > 1:
+                        p = request.find(f"\?tempo{i}=")
+                        lp = len("\?tempo1=")
+                        t = request[p + lp: p + lp + 4]
+                        ft = ""
+                        for i in t:
+                            if ord("0") <= ord(i) <= ord("9"):
+                                ft += i
+                        at.append(["off", ft])
+                automatizacao = at
+            print(at,"<< automatização")
 
             response = pagina_web()
             conn.send('HTTP/1.1 200 OK\n')
@@ -459,7 +574,7 @@ def interface():
             net_global.active()
 
         if net_global != None:
-            if not net_global.isconnected()
+            if not net_global.isconnected():
                 lcd.clear()
                 lcd.putstr("ESCANEANDOnREDE...")
                 list_of_wifi = net_global.scan()
@@ -633,6 +748,7 @@ if __name__ == "__main__":
     net_global = None
     ip_global = None
     temperatura_global_1, temperatura_global_2 = 0, 0
+    automatizado = []
             
     #_thread.start_new_thread(plots,())
     _thread.start_new_thread(interface,())
