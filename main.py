@@ -122,13 +122,13 @@ def plots():
             c = 0
         sleep(0.1)
 
-def estatisticas():          
-    lcd.clear()
-    lcd.putstr("MODOnESTATISTICAS <")
-    
 def tipo_uso():
     lcd.clear()
     lcd.putstr("MODO         <nESTATISTICAS")
+    
+def estatisticas():          
+    lcd.clear()
+    lcd.putstr("MODOnESTATISTICAS <")
     
 def menu_musicas():
     lcd.clear()
@@ -137,6 +137,10 @@ def menu_musicas():
 def avancado():
     lcd.clear()
     lcd.putstr("MUSICASnMANUAL       <")
+
+def wifi_uso():
+    lcd.clear()
+    lcd.putstr("MANUALnWIFI         <")
 
 def tela_descanso():
     global lcd, telapot, telabot, telabot_2, freq_global, pot_global, temperatura_global_1, temperatura_global_2
@@ -445,7 +449,7 @@ def interface():
                     i = 0
                     s = [0, 0, 0, 0]
 
-    def connect_wifi(network = network):
+    def interar_wifi(network = network):
         global net_global, ip_global
 
         if net_global == None:
@@ -509,14 +513,16 @@ def interface():
 
     uso_antigo = ""
     while True:
-        if seta.read() < 4095/4:
+        if seta.read() < 4095/5:
             uso = 0
-        elif seta.read() < 4095/2:
+        elif seta.read() < 4095/5 * 2:
             uso = 1
-        elif seta.read() < 4095/4 * 3:
+        elif seta.read() < 4095/5 * 3:
             uso = 2
-        else:
+        elif seta.read() < 4095/5 * 4:
             uso = 3
+        else:
+            uso = 4
 
         if uso != uso_antigo:
             if uso == 0:
@@ -528,8 +534,12 @@ def interface():
             elif uso == 2:
                 menu_musicas()
                 uso_antigo = ""
-            else:
+            elif uso == 3:
                 avancado()
+                uso_antigo = ""
+            else:
+                wifi_uso()
+                uso_antigo = ""
             uso_antigo = uso
         
         if not entrar.value():
@@ -542,8 +552,11 @@ def interface():
             elif uso == 2:
                 interar_menu_musicas()
                 uso_antigo = ""
-            else:
+            elif uso == 3:
                 interar_avancado()
+                uso_antigo = ""
+            else:
+                interar_wifi()
                 uso_antigo = ""
 
         sleep(0.06)
@@ -557,6 +570,15 @@ if __name__ == "__main__":
 #                             )_)                    
     ###Variável limite duty (1=100%):
     limite = 0.35
+
+    #Para o visor:
+    pino_visor_1, pino_visor_2 = 22, 21
+    DEFALT_I2C_ADDR = 0x27
+
+    i2c = I2C(scl = Pin(pino_visor_1), sda = Pin(pino_visor_2), freq = 10000)
+    lcd = I2cLcd(i2c, DEFALT_I2C_ADDR, 2, 16)
+    lcd.clear()
+    lcd.putstr("    AGROMAGnLIGANDO...")
     
     ###Saídas:
     h6 = 13 #(era 27) #Pré-carga
@@ -583,13 +605,6 @@ if __name__ == "__main__":
     #Bloqueando:
     pwm_block = False
     contagem = 1
-
-    #Para o visor:
-    pino_visor_1, pino_visor_2 = 22, 21
-    DEFALT_I2C_ADDR = 0x27
-
-    i2c = I2C(scl = Pin(pino_visor_1), sda = Pin(pino_visor_2), freq = 10000)
-    lcd = I2cLcd(i2c, DEFALT_I2C_ADDR, 2, 16)
 
     #Para o sensor de temperatura ds18x20:
     sensor_temperatura_1 = DS18X20(OneWire(Pin(5)))
