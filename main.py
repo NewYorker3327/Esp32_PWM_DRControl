@@ -101,19 +101,23 @@ def musicas(mus:str):
     modo_global = backup
 
 def automatizacao_web():
-    global automatizacao, modo_global, lcd
+    global automatizacao, modo_global, lcd, atual_automatizado
     
     while True:
         automatizacao_nova = automatizacao
+        atual_automatizado = -1
         if automatizacao != []:
             lcd.clear()
             lcd.putstr("MODOnAUTOMATICO")
+            ani = 0
             for m, t in automatizacao_nova:
+                atual_automatizado = ani
                 modo_global = m
                 for _ in range(60):
                     sleep(m)
                     if automatizacao_nova != automatizacao:
                         break
+                ani += 1
                 
 
 def mod(a:int):
@@ -197,12 +201,17 @@ def vai_tela_descanso():
             tela_descanso()
 
 def tela_web():
-    global modo_global, ip_global, wifi_global, temperatura_global_1, temperatura_global_2, freq_global, pot_global, limite, automatizado
+    global modo_global, ip_global, wifi_global, temperatura_global_1, temperatura_global_2, freq_global, pot_global, limite, automatizado, atual_automatizado
 
     def pagina_web():
         temperatura_placa = str((esp32.raw_temperature() - 32) * 5/9)
 
-        acoes = [f"<tr>{x[0]}<tr> <tr>{x[1]}<tr> <tr>{x[2]}<tr> <tr>{x[3]}<tr>" for x in automatizado]
+        atual_ = []
+        if atual_automatizado >= 0:
+            atual_ = [0 for i in range(len(automatizado))]
+            atual_[atual_automatizado] = 1
+
+        acoes = [f"<tr>{x[0]}<tr> <tr>{x[1]}<tr> <tr>a<tr>" for x, a in zip(automatizado, atual_)]
         
         html = """
     <html>   
@@ -280,7 +289,6 @@ def tela_web():
             <h2>Automazização Atual:</h2>
             <table style="width:100%">
               <tr>
-                <th>Ação</th>
                 <th>Modo</th> 
                 <th>Tempo Dessa Ação (Minutos)</th>
                 <th>Ativa no Momento</th>
@@ -749,6 +757,7 @@ if __name__ == "__main__":
     ip_global = None
     temperatura_global_1, temperatura_global_2 = 0, 0
     automatizado = []
+    atual_automatizado = -1
             
     #_thread.start_new_thread(plots,())
     _thread.start_new_thread(interface,())
