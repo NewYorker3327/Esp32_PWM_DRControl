@@ -225,7 +225,36 @@ def tela_web():
         
         <head>   
             <meta content="width=device-width, initial-scale=1" name="viewport"></meta>   
-        </head>   
+        </head>
+
+        <style>
+        table, th, td {
+          border: 1px solid black;
+        }
+
+        .grafico-par {
+            display: flex;
+            flex-wrap: wrap;
+        }
+
+        .grafico-container {
+            flex-basis: calc(50% - 20px); /* Divide em duas colunas com espaço entre elas */
+            padding: 10px;
+            box-sizing: border-box;
+        }
+
+        .grafico {
+            width: 100%;
+            max-width: 100%;
+        }
+
+        @media screen and (max-width: 900px) {
+            .grafico-container {
+                flex-basis: 100%; /* Uma coluna em telas menores */
+            }
+        }
+        </style>
+
         <body>
             <center><p>Ligado a <strong>""" + tempo_h_m_s(sum(memoria_uso.values()) * 10) + """</strong>.</p></center>
             <center><h2>AGROMAG</h2></center>   
@@ -243,57 +272,61 @@ def tela_web():
             <center><p>Temperatura da Placa: <strong>""" + str(temperatura_global_2) + """</strong>.</p></center>
             <center><p>Temperatura do Processador: <strong>""" + str(temperatura_placa) + """</strong>.</p></center>
 
-            <br><\br>
+            <br>
 
-            <input type="checkbox" id="automatizar" name="automatizar" value="1">
-            <label for="vehicle1">Rodar automatização definida abaixo</label><br>
-              
-            <label for="modo1">Ação 1 MODO e TEMPO (em minutos):</label>
-            <select id="modo1" name="modo1">
-            <option value="nada1" selected>NADA</option>
-                <option value="off1">OFF</option>
-                <option value="eco1">ECO</option>
-                <option value="turbo1">TURBO</option>
-              </select>
-              <input type="number" id="tempo1" name="tempo1" min="1" max="4320" value="1">
+            <form>
+                <input type="checkbox" id="automatizar" name="automatizar" value="1">
+                <label for="vehicle1">Rodar automatização definida abaixo</label><br>
+                  
+                <label for="modo1">Ação 1 MODO e TEMPO (em minutos):</label>
+                <select id="modo1" name="modo1">
+                <option value="nada1" selected>NADA</option>
+                    <option value="off1">OFF</option>
+                    <option value="eco1">ECO</option>
+                    <option value="turbo1">TURBO</option>
+                  </select>
+                  <input type="number" id="tempo1" name="tempo1" min="1" max="4320" value="1"> <p>
 
-            <label for="modo2">Ação 2 MODO e TEMPO (em minutos):</label>
-            <select id="modo2" name="modo1">
-            <option value="nada2" selected>NADA</option>
-                <option value="off2">OFF</option>
-                <option value="eco2">ECO</option>
-                <option value="turbo2">TURBO</option>
-              </select>
-              <input type="number" id="tempo2" name="tempo2" min="1" max="4320" value="1">
+                <label for="modo2">Ação 2 MODO e TEMPO (em minutos):</label>
+                <select id="modo2" name="modo1">
+                <option value="nada2" selected>NADA</option>
+                    <option value="off2">OFF</option>
+                    <option value="eco2">ECO</option>
+                    <option value="turbo2">TURBO</option>
+                  </select>
+                  <input type="number" id="tempo2" name="tempo2" min="1" max="4320" value="1"> <p>
 
-            <label for="modo3">Ação 3 MODO e TEMPO (em minutos):</label>
-            <select id="modo3" name="modo1">
-            <option value="nada3" selected>NADA</option>
-                <option value="off3">OFF</option>
-                <option value="eco3">ECO</option>
-                <option value="turbo3">TURBO</option>
-              </select>
-              <input type="number" id="tempo3" name="tempo3" min="1" max="4320" value="1">
+                <label for="modo3">Ação 3 MODO e TEMPO (em minutos):</label>
+                <select id="modo3" name="modo1">
+                <option value="nada3" selected>NADA</option>
+                    <option value="off3">OFF</option>
+                    <option value="eco3">ECO</option>
+                    <option value="turbo3">TURBO</option>
+                  </select>
+                  <input type="number" id="tempo3" name="tempo3" min="1" max="4320" value="1"> <p>
 
-            <label for="modo4">Ação 4 MODO e TEMPO (em minutos):</label>
-            <select id="modo4" name="modo1">
-            <option value="nada4" selected>NADA</option>
-                <option value="off4">OFF</option>
-                <option value="eco4">ECO</option>
-                <option value="turbo4">TURBO</option>
-              </select>
-              <input type="number" id="tempo4" name="tempo4" min="1" max="4320" value="1">
+                <label for="modo4">Ação 4 MODO e TEMPO (em minutos):</label>
+                <select id="modo4" name="modo1">
+                <option value="nada4" selected>NADA</option>
+                    <option value="off4">OFF</option>
+                    <option value="eco4">ECO</option>
+                    <option value="turbo4">TURBO</option>
+                  </select>
+                  <input type="number" id="tempo4" name="tempo4" min="1" max="4320" value="1"> <p>
 
-            <label for="modo5">Ação 5 MODO e TEMPO (em minutos):</label>
-            <select id="modo5" name="modo1">
-            <option value="nada5" selected>NADA</option>
-                <option value="off5">OFF</option>
-                <option value="eco5">ECO</option>
-                <option value="turbo5">TURBO</option>
-              </select>
-              <input type="number" id="tempo5" name="tempo5" min="1" max="4320" value="1">
+                <label for="modo5">Ação 5 MODO e TEMPO (em minutos):</label>
+                <select id="modo5" name="modo1">
+                <option value="nada5" selected>NADA</option>
+                    <option value="off5">OFF</option>
+                    <option value="eco5">ECO</option>
+                    <option value="turbo5">TURBO</option>
+                  </select>
+                  <input type="number" id="tempo5" name="tempo5" min="1" max="4320" value="1"> <p>
 
-            <br><\br>
+            <button type="submit">Salvar</button>
+            <\form>
+
+            <br>
             
             <h2>Automazização Atual:</h2>
             <table style="width:100%">
@@ -306,10 +339,23 @@ def tela_web():
             </table>
 
 
-            <canvas id="graficotemperatura" style="width:100%;max-width:900px"></canvas>
-            <canvas id="graficopotencia" style="width:100%;max-width:900px"></canvas>
-            <canvas id="graficofrequencia" style="width:100%;max-width:900px"></canvas>
-            <canvas id="myChart" style="width:100%;max-width:700px"></canvas>
+            <div class="grafico-par">
+                <div class="grafico-container">
+                    <canvas id="graficotemperatura" class="grafico"></canvas>
+                </div>
+                <div class="grafico-container">
+                    <canvas id="graficopotencia" class="grafico"></canvas>
+                </div>
+            </div>
+
+            <div class="grafico-par">
+                <div class="grafico-container">
+                    <canvas id="graficofrequencia" class="grafico"></canvas>
+                </div>
+                <div class="grafico-container">
+                    <canvas id="myChart" class="grafico"></canvas>
+                </div>
+            </div>
 
             <script>
             const xValues = """ + str([i * -10 for i in range(len(memorias["temperatura_1"]))]) + """;
@@ -332,7 +378,7 @@ def tela_web():
                   data: """ + str(memorias["temperatura_3"]) + """,
                   borderColor: "red",
                   fill: false,
-                  label: "Controlador" // Adicione o nome da série B aqui
+                  label: "Controlador"
                 }]
               },
               options: {
@@ -356,7 +402,7 @@ def tela_web():
                   data: """ + str(memorias["potencia"]) + """,
                   borderColor: "red",
                   fill: false,
-                  label: "Potência" // Adicione o nome da série A aqui
+                  label: "Potência"
                 }]
               },
               options: {
@@ -380,7 +426,7 @@ def tela_web():
                   data: """ + str(memorias["frequencia"]) + """,
                   borderColor: "red",
                   fill: false,
-                  label: "Frequência" // Adicione o nome da série A aqui
+                  label: "Frequência"
                 }]
               },
               options: {
@@ -396,7 +442,7 @@ def tela_web():
             });
 
 
-            const xValues = ["OFF", "ECO", "TURBO", "MANUAL", "RESFRIAR"];
+            const xValues2 = ["OFF", "ECO", "TURBO", "MANUAL", "RESFRIAR"];
             const yValues = """ + str(memoria_uso.values()) + """;
             const barColors = [
               "#808080",
@@ -409,7 +455,7 @@ def tela_web():
             new Chart("myChart", {
               type: "pie",
               data: {
-                labels: xValues,
+                labels: xValues2,
                 datasets: [{
                   backgroundColor: barColors,
                   data: yValues
