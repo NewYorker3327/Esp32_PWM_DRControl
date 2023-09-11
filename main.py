@@ -201,7 +201,7 @@ def vai_tela_descanso():
             tela_descanso()
 
 def tela_web():
-    global modo_global, ip_global, wifi_global, temperatura_global_1, temperatura_global_2, freq_global, pot_global, limite, automatizado, atual_automatizado
+    global modo_global, ip_global, wifi_global, temperatura_global_1, temperatura_global_2, freq_global, pot_global, limite, automatizado, atual_automatizado, memorias, memoria_uso
 
     def pagina_web():
         temperatura_placa = str((esp32.raw_temperature() - 32) * 5/9)
@@ -211,10 +211,12 @@ def tela_web():
             atual_ = [0 for i in range(len(automatizado))]
             atual_[atual_automatizado] = 1
 
-        acoes = [f"<tr>{x[0]}<tr> <tr>{x[1]}<tr> <tr>a<tr>" for x, a in zip(automatizado, atual_)]
+        acoes = [f" <tr> <td>{i}</td> <td>{x[0]}</td> <td>{x[1]}</td> <td>a</td> </tr> " for i, x, a in zip([i+1 for i in range(len(automatizado))], automatizado, atual_)]
         
         html = """
-    <html>   
+    <html>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.4/Chart.js"></script>
+        
         <head>   
             <meta content="width=device-width, initial-scale=1" name="viewport"></meta>   
         </head>   
@@ -289,12 +291,128 @@ def tela_web():
             <h2>Automazização Atual:</h2>
             <table style="width:100%">
               <tr>
+                <th>Ação</th> 
                 <th>Modo</th> 
                 <th>Tempo Dessa Ação (Minutos)</th>
                 <th>Ativa no Momento</th>
               </tr>""" + acoes + """
             </table>
 
+
+            <canvas id="graficotemperatura" style="width:100%;max-width:900px"></canvas>
+            <canvas id="graficopotencia" style="width:100%;max-width:900px"></canvas>
+            <canvas id="graficofrequencia" style="width:100%;max-width:900px"></canvas>
+            <canvas id="myChart" style="width:100%;max-width:700px"></canvas>
+
+            <script>
+            const xValues = """ + str([i * -10 for i in range(len(memorias["temperatura_1"]))]) + """;
+
+            new Chart("graficotemperatura", {
+              type: "line",
+              data: {
+                labels: xValues,
+                datasets: [{ 
+                  data: """ + str(memorias["temperatura_1"]) + """,
+                  borderColor: "blue",
+                  fill: false,
+                  label: "Sensor 1" // Adicione o nome da série A aqui
+                }, { 
+                  data: """ + str(memorias["temperatura_2"]) + """,
+                  borderColor: "green",
+                  fill: false,
+                  label: "Sensor 2" // Adicione o nome da série B aqui
+                }]
+              },
+              options: {
+                title: { 
+                  display: true,
+                  text: 'Temperaturas'
+                },
+                legend: {
+                  display: true,
+                  position: 'top',
+                }
+              }
+            });
+
+
+            new Chart("graficopotencia", {
+              type: "line",
+              data: {
+                labels: xValues,
+                datasets: [{ 
+                  data: """ + str(memorias["potencia"]) + """,
+                  borderColor: "red",
+                  fill: false,
+                  label: "Potência" // Adicione o nome da série A aqui
+                }]
+              },
+              options: {
+                title: { 
+                  display: true,
+                  text: 'Potência'
+                },
+                legend: {
+                  display: false,
+                  position: 'top',
+                }
+              }
+            });
+
+
+            new Chart("graficofrequencia", {
+              type: "line",
+              data: {
+                labels: xValues,
+                datasets: [{ 
+                  data: """ + str(memorias["frequencia"]) + """,
+                  borderColor: "red",
+                  fill: false,
+                  label: "Frequência" // Adicione o nome da série A aqui
+                }]
+              },
+              options: {
+                title: { 
+                  display: true,
+                  text: 'Frequência'
+                },
+                legend: {
+                  display: false,
+                  position: 'top',
+                }
+              }
+            });
+
+
+            const xValues = ["OFF", "ECO", "TURBO", "MANUAL", "RESFRIAR"];
+            const yValues = """ + str(memoria_uso.values()) + """;
+            const barColors = [
+              "#808080",
+              "#8ae580",
+              "#e95151",
+              "#feec35",
+              "#16aeae"
+            ];
+
+            new Chart("myChart", {
+              type: "pie",
+              data: {
+                labels: xValues,
+                datasets: [{
+                  backgroundColor: barColors,
+                  data: yValues
+                }]
+              },
+              options: {
+                title: {
+                  display: true,
+                  text: "Frequência de uso dos Modos"
+                }
+              }
+            });
+
+            </script>
+    
         </body>   
         </html>  
 """
@@ -306,10 +424,22 @@ def tela_web():
     
     while True:
         sleep(10)
+
+        memorias["temperatura_1"].append(temperatura_global_1)
+        memorias["temperatura_1"].append(temperatura_global_2)
+        memorias["potencia"].append(pot_global)
+        memorias["frequencia"].append(freq_global)
+
+        for k_m in memorias.keys():
+            if len(memorias[k_m]) > 100:
+                memorias[k_m] = memorias[k_m][-100:]
+
+        memoria_uso[modo_global] += 1
+        
         if modo_global != "manual" and modo_global != "resfriar" and modo_global != "musica":
             conn, addr = soc.accept()
 
-            request = str(conn.recv(1024))
+            request = str(conn.recv(2048))
             if request.find("\?MODO=0") > 1:
                 modo_global = "off"
             elif request.find("\?MODO=1") > 1:
@@ -758,6 +888,15 @@ if __name__ == "__main__":
     temperatura_global_1, temperatura_global_2 = 0, 0
     automatizado = []
     atual_automatizado = -1
+    memoria_uso = {"off":0,
+                   "eco":0,
+                   "turbo":0,
+                   "manual":0,
+                   "resfriar":0}
+    memorias = {"temperatura_1":[],
+                "temperatura_2":[],
+                "potencia":[],
+                "frequencia":[]}
             
     #_thread.start_new_thread(plots,())
     _thread.start_new_thread(interface,())
