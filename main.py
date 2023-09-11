@@ -200,6 +200,12 @@ def vai_tela_descanso():
         if t1 == t2 == t3 == t4:
             tela_descanso()
 
+def tempo_h_m_s(segundos):
+    horas = segundos // 3600
+    minutos = (segundos % 3600) // 60
+    segundos = segundos % 60
+    return f"{horas} hora(s), {minutos} minuto(s) e {segundos} segundo(s)"
+
 def tela_web():
     global modo_global, ip_global, wifi_global, temperatura_global_1, temperatura_global_2, freq_global, pot_global, limite, automatizado, atual_automatizado, memorias, memoria_uso
 
@@ -220,7 +226,8 @@ def tela_web():
         <head>   
             <meta content="width=device-width, initial-scale=1" name="viewport"></meta>   
         </head>   
-        <body>   
+        <body>
+            <center><p>Ligado a <strong>""" + tempo_h_m_s(sum(memoria_uso.values()) * 10) + """</strong>.</p></center>
             <center><h2>AGROMAG</h2></center>   
                 <center>   
                  <form>   
@@ -315,12 +322,17 @@ def tela_web():
                   data: """ + str(memorias["temperatura_1"]) + """,
                   borderColor: "blue",
                   fill: false,
-                  label: "Sensor 1" // Adicione o nome da série A aqui
+                  label: "Saída" // Adicione o nome da série A aqui
                 }, { 
                   data: """ + str(memorias["temperatura_2"]) + """,
                   borderColor: "green",
                   fill: false,
-                  label: "Sensor 2" // Adicione o nome da série B aqui
+                  label: "Hardware" // Adicione o nome da série B aqui
+                }, { 
+                  data: """ + str(memorias["temperatura_3"]) + """,
+                  borderColor: "red",
+                  fill: false,
+                  label: "Controlador" // Adicione o nome da série B aqui
                 }]
               },
               options: {
@@ -406,7 +418,7 @@ def tela_web():
               options: {
                 title: {
                   display: true,
-                  text: "Frequência de uso dos Modos"
+                  text: "Frequência de uso dos Modos (nos últimos """ + str(sum(memoria_uso.values()) * 10) + """ segundos)"
                 }
               }
             });
@@ -426,9 +438,10 @@ def tela_web():
         sleep(10)
 
         memorias["temperatura_1"].append(temperatura_global_1)
-        memorias["temperatura_1"].append(temperatura_global_2)
-        memorias["potencia"].append(pot_global)
-        memorias["frequencia"].append(freq_global)
+        memorias["temperatura_2"].append(temperatura_global_2)
+        memorias["temperatura_3"].append(str((esp32.raw_temperature() - 32) * 5/9))
+        memorias["potencia"].append(int(pot_global/40*limite + 0.9))
+        memorias["frequencia"].append(int(300 + int(freq_global/1.517))-1)
 
         for k_m in memorias.keys():
             if len(memorias[k_m]) > 100:
@@ -895,6 +908,7 @@ if __name__ == "__main__":
                    "resfriar":0}
     memorias = {"temperatura_1":[],
                 "temperatura_2":[],
+                "temperatura_3":[],
                 "potencia":[],
                 "frequencia":[]}
             
