@@ -17,9 +17,12 @@ from onewire import OneWire
 import network
 import socket
 
-#Temperatuda da propria esp
+#Temperatuda da propria esp:
 import esp32
 #esp32.raw_temperature()
+
+#Medir memória:
+from gc import mem_free, collect
 
 def voltar(k, log2 = log2, limite_inf = 440):
     return int(12*log2(k/limite_inf))
@@ -271,6 +274,7 @@ def tela_web():
             <center><p>Temperatura saída: <strong>""" + str(temperatura_global_1) + """</strong>.</p></center>
             <center><p>Temperatura da Placa: <strong>""" + str(temperatura_global_2) + """</strong>.</p></center>
             <center><p>Temperatura do Processador: <strong>""" + str(temperatura_placa) + """</strong>.</p></center>
+            <center><p>Memória usada (kb): <strong>""" + str((512*1024 - gc.mem_alloc)/1024)[:6] + """/"""+ str(512) + """</strong>.</p></center>
 
             <br>
 
