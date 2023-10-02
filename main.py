@@ -24,6 +24,23 @@ import esp32
 #Medir memória:
 from gc import mem_free, collect
 
+#Classes:
+class Botao_adaptavel:
+    def __init__(self, porta):
+        self.real = Pin(porta, Pin.IN)
+        if self.real.value() == 0:
+            self.normal = True
+
+    def value(self):
+        resp = self.real.value()
+        if self.normal:
+            return resp
+        else:
+            if resp == 0:
+                return 1
+            else:
+                0
+
 def voltar(k, log2 = log2, limite_inf = 440):
     return int(12*log2(k/limite_inf))
 
@@ -909,8 +926,8 @@ if __name__ == "__main__":
     ph6.on()
 
     ###Entradas:
-    telabot = Pin(16, Pin.IN)
-    telabot_2 = Pin(18, Pin.IN)
+    telabot = Botao_adaptavel(16) #telabot = Pin(16, Pin.IN)
+    telabot_2 = Botao_adaptavel(18)#telabot_2 = Pin(18, Pin.IN)
     telapot = ADC(Pin(4))
 
     ###Parte para funções de curvas:
