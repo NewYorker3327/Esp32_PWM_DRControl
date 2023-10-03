@@ -59,6 +59,7 @@ def automatizacao_web():
                     if automatizacao_nova != automatizacao:
                         break
                 ani += 1
+        sleep(3)
                 
 def mudar(a:int, b:int, n = 1):
     if a > b:
@@ -550,6 +551,7 @@ if __name__ == "__main__":
 
     _thread.start_new_thread(interface,())
     _thread.start_new_thread(tela_web,())
+    _thread.start_new_thread(automatizacao_web,())
     
     #Loop principal:
     contagem = 0  
