@@ -3,12 +3,15 @@
 Entradas:
 
 TelaBot: {D16, PINO 6} = GPIO 16 = BOOLEAN
+
 TelaPot:{D4, PINO 5} = GPIO 4 = ANALOG
+
 UVLO: {D34, PINO 19} = GPIO 34 = ANALOG
 
 Saídas:
 
 Pre-Charge: {D13, PINO 28} = GPIO 13 = BOOLEAN
+
 PWM: {D12, PINO 27} = GPIO 12 = PWM OUT
 
 ALGORITMO: 
