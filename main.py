@@ -49,7 +49,9 @@ def automatizacao_web():
         sleep(3)
 
 def tela_web():
-    global modo_global, ip_global, wifi_global, temperatura_global_1, temperatura_global_2, freq_global, pot_global, limite, automatizado, atual_automatizado, memorias, memoria_uso
+    sleep(10)
+    print("Começando tela_web!")
+    global modo_global, ip_global, net_global, temperatura_global_1, temperatura_global_2, freq_global, pot_global, limite, automatizado, atual_automatizado, memorias, memoria_uso
 
     def pagina_web():
         global html
@@ -65,15 +67,9 @@ def tela_web():
         html = criar_html(modo_global, freq_global, temperatura_global_1, temperatura_global_2, temperatura_placa, gc, memorias, memoria_uso, acoes)
 
         return html
-
-    print("Ligando socket")
-    soc = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    soc.bind(("", 80))
-    soc.listen(5)
-    print(soc)
+   
     while True:
-        sleep(5)
-        print("Lendo...")
+        print("Lendo memoria para site...")
         memorias["temperatura_1"].append(temperatura_global_1)
         memorias["temperatura_2"].append(temperatura_global_2)
         memorias["temperatura_3"].append(str((esp32.raw_temperature() - 32) * 5/9))
@@ -85,12 +81,18 @@ def tela_web():
                 memorias[k_m] = memorias[k_m][-100:]
 
         memoria_uso[modo_global] += 1
+
+        print("Configurando SITE...")
+        soc = socket.socket(socket.AF_INET, socket.SOCK_STREAM) #IPv4, TCP socket
+        soc.bind(('', 80)) #Pode ser lido por qualquer ip...
+        soc.listen(3) #Pode passar o código a até 3 dispositivos.
+        print("Pode entrar no IP!")
         
         if modo_global != "manual" and modo_global != "resfriar":
             conn, addr = soc.accept()
             print(conn, addr)
 
-            request = str(conn.recv(2048))
+            request = str(conn.recv(1024))
             if request.find("\?MODO=") > 1:
                 pos = request.find("\?MODO=") + len("\?MODO=")
                 num = request[pos:pos+1]
@@ -139,6 +141,7 @@ def tela_web():
                 automatizacao = at
             print(at,"<< automatização")
 
+            print("Obtendo respostas do site...")
             response = pagina_web()
             conn.send('HTTP/1.1 200 OK\n')
             conn.send('Content-Type: text/html\n')
@@ -148,7 +151,7 @@ def tela_web():
             conn.close()    
 
 def interface():
-    global net_global, telapot, lcd, ip_global, login_wifi, senha_wifi
+    global telapot, lcd, login_wifi, senha_wifi
 
     def iterar_estatisticas():
         global temperatura_global_1, temperatura_global_2, freq_global, pot_global, limite, ip_global, modo_nome
@@ -164,7 +167,8 @@ def interface():
             sleep(0.2)
         lcd.clear()     
 
-    net_global, ip_global = iterar_wifi(login_wifi, senha_wifi)
+    globals()["net_global"], globals()["ip_global"] = iterar_wifi(login_wifi, senha_wifi)
+    print(f"Net: {globals()['net_global']} | IP: {globals()['ip_global']}")
     if ip_global != None:
         lcd.clear()
         lcd.putstr(f"IP: {ip_global}")
@@ -178,32 +182,39 @@ if __name__ == "__main__":
 #  | |_| |  __/  _| | | | | | (_| (_) |  __/\__ \  _ 
 #  |____/ \___|_| |_|_| |_|_|\___\___/ \___||___/ (_)
 #                             )_)                    
-    ###Variável limite duty (1=100%):
+    ###Variável limite duty (1~40%):
     limite = 0.35
 
     #Para o visor:
+    print("Ligando o visor (PIN 21 e 22)...")
     pino_visor_1, pino_visor_2 = 22, 21
     DEFALT_I2C_ADDR = 0x27
 
     i2c = I2C(scl = Pin(pino_visor_1), sda = Pin(pino_visor_2), freq = 10000)
     lcd = I2cLcd(i2c, DEFALT_I2C_ADDR, 2, 16)
     lcd.clear()
+    print("Visor ligado!\n")
     lcd.putstr("LIGANDO...")
 
-    ###Saídas:
-    h6 = 13 #(era 27) #Pré-carga
-    h9 = 12 #(era 25) #PWM    
+    print("Ligando PWM (PIN 12)...")
+    ###Saídas: 
     pwm = PWM(Pin(12))#Propriedades do canal PWN
     pwm.freq(300)
     pwm.duty(0)
+    print("PWM ligado!\n")
+    
     #Como temos que mandar alguns volts ou saidas 0, 1 pelas portas fazemos:
+    print("Ligando saida serial (PIN 13)...")
     ph6 = Pin(13, Pin.OUT)
     ph6.off() #Começa desligado
     sleep(3) #O Programa deve ficar inativo por n segundos...
     ph6.on()
+    print("Saída serial ligada!\n")
 
     ###Entradas:
-    telapot = ADC(Pin(4))
+    print("Ligando potenciometro (PIN 32)...")
+    telapot = ADC(Pin(32))
+    print(f"Potenciometro ligado, pos: {telapot.read()}!\n")
 
     ###Parte para funções de curvas:
     potValue1 = 0
@@ -215,13 +226,17 @@ if __name__ == "__main__":
     contagem = 1
 
     #Para o sensor de temperatura ds18x20:
+##    print("Ligando o sensor de temperatura 1 (PIN 5)")
 ##    sensor_temperatura_1 = DS18X20(OneWire(Pin(5)))
 ##    roms1 = sensor_temperatura_1.scan()
 ##    temperatura = sensor_temperatura_1.read_temp(roms1[0])
+##    print(f"Sensor de temperatura 1 ligado!\n")
 
-    sensor_temperatura_2 = DS18X20(OneWire(Pin(17)))
+    print("Ligando o sensor de temperatura 2 (PIN 16)")
+    sensor_temperatura_2 = DS18X20(OneWire(Pin(16)))
     roms2 = sensor_temperatura_2.scan()
     temperatura_de_seguranca = sensor_temperatura_2.read_temp(roms2[0])
+    print(f"Sensor de temperatura 2 ligado!\n")
 
 #   _____                     _                  _           
 #  | ____|_  _____  ___ _   _| |_ __ _ _ __   __| | ___    _ 
@@ -249,6 +264,7 @@ if __name__ == "__main__":
                    "modo_2":0,
                    "modo_3":0,
                    "modo_4":0,
+                   "manual":0,
                    "resfriar":0}
     memorias = {"temperatura_1":[],
                 "temperatura_2":[],
@@ -256,9 +272,11 @@ if __name__ == "__main__":
                 "potencia":[],
                 "frequencia":[]}
 
+    print("Ligando os threads...")
     _thread.start_new_thread(interface,())
     _thread.start_new_thread(tela_web,())
 ##    _thread.start_new_thread(automatizacao_web,())
+    print("Threads ligados!")
     
     #Loop principal:
     contagem = 0
@@ -266,11 +284,10 @@ if __name__ == "__main__":
     pwm.freq(432)
     while True:
         contagem += 1
+        sensor = telapot.read()
 
         pot_global = mudar(pot_global, pot_ideal)
         pwm.duty(pot_global)
-
-        sensor = telapot.read()
 
         if sensor < 4096/4:
             modo_global = "modo_1"
