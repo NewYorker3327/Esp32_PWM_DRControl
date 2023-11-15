@@ -1,3 +1,7 @@
+#Wifi:
+import network
+import socket
+
 def mudar(b:int, a:int,  n = 1):
     if a > b:
         return b + n
@@ -11,9 +15,20 @@ def tempo_h_m_s(segundos):
     segundos = segundos % 60
     return f"{horas} hora(s), {minutos} minuto(s) e {segundos} segundo(s)"
 
+def iterar_wifi(network = network):
+    net_global = network.WLAN(network.STA_IF)
+    net_global.active(True)
+    net_global.ifconfig(("192.168.10.99", "255.255.255.0", "192.168.10.1", "8.8.8.8"))
+    print(f"NET: {net_global}")
+    net_global.connect(login_wifi, senha_wifi)
+    ip_global = net_global.ifconfig()[0]
+    print(f"IP: {ip_global}")
+    return net_global, ip_global
+
 def criar_html(modo_global, freq_global, temperatura_global_1, temperatura_global_2, temperatura_placa, gc, memorias, memoria_uso, acoes):
     html = """
     <html>
+        <meta charset="UTF-8">
         <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.4/Chart.js"></script>
         
         <head>   
@@ -61,7 +76,7 @@ def criar_html(modo_global, freq_global, temperatura_global_1, temperatura_globa
                 </center>   
             <center><p>Modo atual: <strong>""" + str(modo_global) + """</strong>.</p></center>
             <center><p>Frequência: <strong>""" + str(freq_global) + """</strong>.</p></center>
-            <center><p>Potência: <strong>""" + str(pot_global) + """</strong>.</p></center>
+            <center><p>Potência: <strong>""" + str(int(pot_global/1024*100 + 0.5)) + """</strong>.</p></center>
             <center><p>Temperatura saída: <strong>""" + str(temperatura_global_1) + """</strong>.</p></center>
             <center><p>Temperatura da Placa: <strong>""" + str(temperatura_global_2) + """</strong>.</p></center>
             <center><p>Temperatura do Processador: <strong>""" + str(temperatura_placa) + """</strong>.</p></center>

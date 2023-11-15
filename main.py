@@ -25,7 +25,7 @@ import esp32
 from gc import mem_free, collect
 
 #Proprios:
-from outros import mudar, tempo_h_m_s, criar_html
+from outros import mudar, tempo_h_m_s, iterar_wifi, criar_html
 from login_wifi import login_wifi, senha_wifi
 
 def automatizacao_web():
@@ -154,38 +154,27 @@ def tela_web():
             conn.close()    
 
 def interface():
-    global telapot, lcd, ip_global
+    global net_global, telapot, lcd, ip_global, login_wifi, senha_wifi
 
     def iterar_estatisticas():
         global temperatura_global_1, temperatura_global_2, freq_global, pot_global, limite, ip_global, modo_nome
-        c = 0
         nome_5_carac = modo_nome + " " * (5 - len(modo_nome))
-        estat_antigo = f"{nome_5_carac} T1:{int(temperatura_global_1)}\nDUTY:{int(pot_global/1024*100)}% T2:{int(temperatura_global_2)}" 
-        k = 0
+        estat_antigo = f"{nome_5_carac} T1:{int(temperatura_global_1)}\nDUTY:{int(pot_global/1024*100 + 0.5)}% T2:{int(temperatura_global_2)}" 
         while True:
-            if c % 5 == 0:
-                c = 0
-                nome_5_carac = modo_nome + " " * (5 - len(modo_nome))
-                estat = f"{nome_5_carac} T1:{int(temperatura_global_1)}\nDUTY:{int(pot_global/1024*100)}% T2:{int(temperatura_global_2)}" 
-                if estat_antigo != estat:
-                    lcd.clear()
-                    lcd.putstr(estat)
-                    estat_antigo = estat
+            nome_5_carac = modo_nome + " " * (5 - len(modo_nome))
+            estat = f"{nome_5_carac} T1:{int(temperatura_global_1)}\nDUTY:{int(pot_global/1024*100 + 0.5)}% T2:{int(temperatura_global_2)}" 
+            if estat_antigo != estat:
+                lcd.clear()
+                lcd.putstr(estat)
+                estat_antigo = estat
             sleep(0.2)
         lcd.clear()     
 
-    def iterar_wifi(network = network):
-        global net_global, ip_global, login_wifi, senha_wifi
-
-        net_global = network.WLAN(network.STA_IF)
-        net_global.active(True)
-        net_global.ifconfig(("192.168.10.99", "255.255.255.0", "192.168.10.1", "8.8.8.8"))
-        print(f"NET: {net_global}")
-        net_global.connect(login_wifi, senha_wifi)
-        ip_global = net_global.ifconfig()[0]
-        print(f"IP: {ip_global}")
-
-    iterar_wifi()
+    net_global, ip_global = iterar_wifi(login_wifi, senha_wifi)
+    if ip_global != None:
+        lcd.clear()
+        lcd.putstr(f"IP: {ip_global}")
+        sleep(5)
     iterar_estatisticas()
                 
 if __name__ == "__main__":
