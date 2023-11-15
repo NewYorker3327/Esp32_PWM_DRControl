@@ -50,17 +50,18 @@ def criar_html(modo_global, freq_global, temperatura_global_1, temperatura_globa
 
         <body>
             <center><p>Ligado a <strong>""" + tempo_h_m_s(sum(memoria_uso.values()) * 10) + """</strong>.</p></center>
-            <center><h2>AGROMAG</h2></center>   
+            <center><h2>Cafarnaum</h2></center>   
                 <center>   
                  <form>   
                   <button name="MODO" type="submit" value="0"> OFF </button>   
                   <button name="MODO" type="submit" value="1"> ECO </button>
-                  <button name="MODO" type="submit" value="2"> TURBO </button>  
+                  <button name="MODO" type="submit" value="2"> TURBO </button>
+                  <button name="MODO" type="submit" value="3"> FULL </button>  
                  </form>   
                 </center>   
             <center><p>Modo atual: <strong>""" + str(modo_global) + """</strong>.</p></center>
-            <center><p>Frequência: <strong>""" + str(int(300 + int(freq_global/1.517))-1) + """</strong>.</p></center>
-            <center><p>Potência: <strong>""" + str(int(pot_global/40*limite + 0.9)) + """</strong>.</p></center>
+            <center><p>Frequência: <strong>""" + str(freq_global) + """</strong>.</p></center>
+            <center><p>Potência: <strong>""" + str(pot_global) + """</strong>.</p></center>
             <center><p>Temperatura saída: <strong>""" + str(temperatura_global_1) + """</strong>.</p></center>
             <center><p>Temperatura da Placa: <strong>""" + str(temperatura_global_2) + """</strong>.</p></center>
             <center><p>Temperatura do Processador: <strong>""" + str(temperatura_placa) + """</strong>.</p></center>
@@ -78,6 +79,7 @@ def criar_html(modo_global, freq_global, temperatura_global_1, temperatura_globa
                     <option value="off1">OFF</option>
                     <option value="eco1">ECO</option>
                     <option value="turbo1">TURBO</option>
+                    <option value="full1">FULL</option>
                   </select>
                   <input type="number" id="tempo1" name="tempo1" min="1" max="4320" value="1"> <p>
 
@@ -87,6 +89,7 @@ def criar_html(modo_global, freq_global, temperatura_global_1, temperatura_globa
                     <option value="off2">OFF</option>
                     <option value="eco2">ECO</option>
                     <option value="turbo2">TURBO</option>
+                    <option value="full2">FULL</option>
                   </select>
                   <input type="number" id="tempo2" name="tempo2" min="1" max="4320" value="1"> <p>
 
@@ -96,6 +99,7 @@ def criar_html(modo_global, freq_global, temperatura_global_1, temperatura_globa
                     <option value="off3">OFF</option>
                     <option value="eco3">ECO</option>
                     <option value="turbo3">TURBO</option>
+                    <option value="full3">FULL</option>
                   </select>
                   <input type="number" id="tempo3" name="tempo3" min="1" max="4320" value="1"> <p>
 
@@ -105,6 +109,7 @@ def criar_html(modo_global, freq_global, temperatura_global_1, temperatura_globa
                     <option value="off4">OFF</option>
                     <option value="eco4">ECO</option>
                     <option value="turbo4">TURBO</option>
+                    <option value="full4">FULL</option>
                   </select>
                   <input type="number" id="tempo4" name="tempo4" min="1" max="4320" value="1"> <p>
 
@@ -114,6 +119,7 @@ def criar_html(modo_global, freq_global, temperatura_global_1, temperatura_globa
                     <option value="off5">OFF</option>
                     <option value="eco5">ECO</option>
                     <option value="turbo5">TURBO</option>
+                    <option value="full5">FULL</option>
                   </select>
                   <input type="number" id="tempo5" name="tempo5" min="1" max="4320" value="1"> <p>
 
@@ -236,7 +242,7 @@ def criar_html(modo_global, freq_global, temperatura_global_1, temperatura_globa
             });
 
 
-            const xValues2 = ["OFF", "ECO", "TURBO", "MANUAL", "RESFRIAR"];
+            const xValues2 = ["OFF", "ECO", "TURBO", "FULL", "PROGRAMADO", "RESFRIAR"];
             const yValues = """ + str(memoria_uso.values()) + """;
             const barColors = [
               "#808080",

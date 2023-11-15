@@ -26,6 +26,7 @@ from gc import mem_free, collect
 
 #Proprios:
 from outros import mudar, tempo_h_m_s, criar_html
+from login_wifi import login_wifi, senha_wifi
 
 def automatizacao_web():
     global automatizacao, modo_global, lcd, atual_automatizado
@@ -64,6 +65,7 @@ def tela_web():
         html = criar_html(modo_global, freq_global, temperatura_global_1, temperatura_global_2, temperatura_placa, gc, memorias, memoria_uso, acoes)
 
         return html
+
     print("Ligando socket")
     soc = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     soc.bind(("", 80))
@@ -75,8 +77,8 @@ def tela_web():
         memorias["temperatura_1"].append(temperatura_global_1)
         memorias["temperatura_2"].append(temperatura_global_2)
         memorias["temperatura_3"].append(str((esp32.raw_temperature() - 32) * 5/9))
-        memorias["potencia"].append(int(pot_global/40*limite + 0.9))
-        memorias["frequencia"].append(int(300 + int(freq_global/1.517))-1)
+        memorias["potencia"].append(pot_global)
+        memorias["frequencia"].append(freq_global)
 
         for k_m in memorias.keys():
             if len(memorias[k_m]) > 100:
@@ -89,12 +91,17 @@ def tela_web():
             print(conn, addr)
 
             request = str(conn.recv(2048))
-            if request.find("\?MODO=0") > 1:
-                modo_global = "off"
-            elif request.find("\?MODO=1") > 1:
-                modo_global = "off"
-            elif request.find("\?MODO=2") > 1:
-                modo_global = "turbo"
+            if request.find("\?MODO=") > 1:
+                pos = request.find("\?MODO=") + len("\?MODO=")
+                num = request[pos:pos+1]
+                print(f"Numero_da_altomatizacao: {num}")
+                modo_global = f"modo_{num}"
+##            elif request.find("\?MODO=1") > 1:
+##                modo_global = "modo_2"
+##            elif request.find("\?MODO=2") > 1:
+##                modo_global = "modo_3"
+##            elif request.find("\?MODO=3") > 1:
+##                modo_global = "modo_4"
 
             at = []
             if request.find(f"\?automatizar=1") > 1:
@@ -107,7 +114,7 @@ def tela_web():
                         for i in t:
                             if ord("0") <= ord(i) <= ord("9"):
                                 ft += i
-                        at.append(["off", ft])
+                        at.append(["modo_1", ft])
                     elif request.find(f"\?modo{i}=eco{i}") > 1:
                         p = request.find(f"\?tempo{i}=")
                         lp = len("\?tempo1=")
@@ -116,7 +123,7 @@ def tela_web():
                         for i in t:
                             if ord("0") <= ord(i) <= ord("9"):
                                 ft += i
-                        at.append(["off", ft])
+                        at.append(["modo_2", ft])
                     elif request.find(f"\?modo{i}=turbo{i}") > 1:
                         p = request.find(f"\?tempo{i}=")
                         lp = len("\?tempo1=")
@@ -125,7 +132,16 @@ def tela_web():
                         for i in t:
                             if ord("0") <= ord(i) <= ord("9"):
                                 ft += i
-                        at.append(["off", ft])
+                        at.append(["modo_3", ft])
+                    elif request.find(f"\?modo{i}=full{i}") > 1:
+                        p = request.find(f"\?tempo{i}=")
+                        lp = len("\?tempo1=")
+                        t = request[p + lp: p + lp + 4]
+                        ft = ""
+                        for i in t:
+                            if ord("0") <= ord(i) <= ord("9"):
+                                ft += i
+                        at.append(["modo_4", ft])
                 automatizacao = at
             print(at,"<< automatização")
 
@@ -143,12 +159,14 @@ def interface():
     def iterar_estatisticas():
         global temperatura_global_1, temperatura_global_2, freq_global, pot_global, limite, ip_global, modo_nome
         c = 0
-        estat_antigo = f"{modo_nome} FRQ:T1:{int(temperatura_global_1)}\nDUTY:{int(pot_global/1024*100)}% T2:{int(temperatura_global_2)}" 
+        nome_5_carac = modo_nome + " " * (5 - len(modo_nome))
+        estat_antigo = f"{nome_5_carac} T1:{int(temperatura_global_1)}\nDUTY:{int(pot_global/1024*100)}% T2:{int(temperatura_global_2)}" 
         k = 0
         while True:
             if c % 5 == 0:
                 c = 0
-                estat = f"{modo_nome} FRQ:T1:{int(temperatura_global_1)}\nDUTY:{int(pot_global/1024*100)}% T2:{int(temperatura_global_2)}" 
+                nome_5_carac = modo_nome + " " * (5 - len(modo_nome))
+                estat = f"{nome_5_carac} T1:{int(temperatura_global_1)}\nDUTY:{int(pot_global/1024*100)}% T2:{int(temperatura_global_2)}" 
                 if estat_antigo != estat:
                     lcd.clear()
                     lcd.putstr(estat)
@@ -157,29 +175,17 @@ def interface():
         lcd.clear()     
 
     def iterar_wifi(network = network):
-        global net_global, ip_global
+        global net_global, ip_global, login_wifi, senha_wifi
 
-        if net_global == None:
-            lcd.clear()
-            lcd.putstr("LIGANDO WIFI...")
-            net_global = network.WLAN(network.STA_IF)
-            net_global.active()
+        net_global = network.WLAN(network.STA_IF)
+        net_global.active(True)
+        net_global.ifconfig(("192.168.10.99", "255.255.255.0", "192.168.10.1", "8.8.8.8"))
+        print(f"NET: {net_global}")
+        net_global.connect(login_wifi, senha_wifi)
+        ip_global = net_global.ifconfig()[0]
+        print(f"IP: {ip_global}")
 
-        if net_global != None:
-            if not net_global.isconnected():
-                list_of_wifi = net_global.scan()
-
-                wifi = []
-                for wifi_ in list_of_wifi:
-                    if wifi_[3] == 0:
-                        wifi.append(wifi_)
-                lw = len(wifi)
-                
-                wifi_to_connect = wifi[i]
-                sta.connect(wifi_to_connect[0])
-                ip_global = net_global.ifconfig()[0]
-
-    #iterar_wifi()
+    iterar_wifi()
     iterar_estatisticas()
                 
 if __name__ == "__main__":
