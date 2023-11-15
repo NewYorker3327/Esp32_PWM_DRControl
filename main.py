@@ -96,12 +96,6 @@ def tela_web():
                 num = request[pos:pos+1]
                 print(f"Numero_da_altomatizacao: {num}")
                 modo_global = f"modo_{num}"
-##            elif request.find("\?MODO=1") > 1:
-##                modo_global = "modo_2"
-##            elif request.find("\?MODO=2") > 1:
-##                modo_global = "modo_3"
-##            elif request.find("\?MODO=3") > 1:
-##                modo_global = "modo_4"
 
             at = []
             if request.find(f"\?automatizar=1") > 1:
