@@ -16,29 +16,6 @@ def tempo_h_m_s(segundos):
     segundos = segundos % 60
     return f"{horas} hora(s), {minutos} minuto(s) e {segundos} segundo(s)"
 
-def iterar_wifi(login_wifi, senha_wifi):
-    net_global = network.WLAN(network.STA_IF)
-    net_global.active(False)
-    net_global.active(True)
-    net_global.ifconfig(("192.168.10.99", "255.255.255.0", "192.168.10.1", "8.8.8.8"))
-    print(f"NET: {net_global}")
-    
-    conectando = False
-    while conectando:
-        print(f"Tentando conectar...")
-        try:
-            net_global.connect(login_wifi, senha_wifi)
-            conectando = True
-        except OSError:
-            sleep(0.2)
-
-    ip_global = net_global.ifconfig()[0]
-    print(f"{'-'*5}Configuracao{'-'*5}")
-    for line in net_global.ifconfig():
-        print(line)
-    print(f"IP: {ip_global}")
-    return net_global, ip_global
-
 def criar_html(modo_global, freq_global, temperatura_global_1, temperatura_global_2, temperatura_placa, gc, memorias, memoria_uso, acoes):
     html = """
     <html>
