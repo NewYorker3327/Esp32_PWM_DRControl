@@ -1,18 +1,24 @@
 # Esp32_PWM_DRControl
 
-## Entradas:
+## Conexões:
 
-TelaBot: {D16, PINO 6} = GPIO 16 = BOOLEAN
+### Entradas:
 
-TelaPot:{D4, PINO 5} = GPIO 4 = ANALOG
+Visor: {..., PINO 21(sda) e 22(scl)}
 
-UVLO: {D34, PINO 19} = GPIO 34 = ANALOG
+PWM: {D12, PINO 27} = GPIO 12 = PWM OUT
 
-## Saídas:
+TelaPot: {..., PINO 32}
+
+Sensor 1: {..., PINO 5}
+
+Sensor 2: {..., PINO 16}
+
+### Saídas:
 
 Pre-Charge: {D13, PINO 28} = GPIO 13 = BOOLEAN
 
-PWM: {D12, PINO 27} = GPIO 12 = PWM OUT
+
 
 ## ALGORITMO: 
 
@@ -44,4 +50,13 @@ ds18x20
 onewir
 outros
 wifi
+login_wifi
 ```
+
+## Requisitos:
+
+• MICROPYTHON;
+
+• Minimo de 64KB (32KB do programa e 32KB do boot e logs) de memória flash ;
+
+• Conexão a WIFI.
