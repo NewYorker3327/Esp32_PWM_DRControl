@@ -57,6 +57,6 @@ login_wifi
 
 • MICROPYTHON;
 
-• Minimo de 64KB (32KB do programa e 32KB do boot e logs) de memória flash ;
+• Minimo de 64KB (32KB do programa e 32KB do boot e logs) de memória flash;
 
 • Conexão a WIFI.
