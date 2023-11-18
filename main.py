@@ -25,12 +25,18 @@ import esp32
 from gc import mem_free, collect
 
 #Proprios:
-from outros import mudar, tempo_h_m_s, iterar_wifi, criar_html
+from outros import mudar, tempo_h_m_s, criar_html
 from login_wifi import login_wifi, senha_wifi
-from wifi import Wifi
+from wifi_esp32 import Wifi
 
 def automatizacao_web():
     global automatizacao, modo_global, lcd, atual_automatizado
+    sleep(5)
+
+    while True:
+        if "automatizacao" in globals():
+            break
+        sleep(0.5)      
     
     while True:
         automatizacao_nova = automatizacao
@@ -43,13 +49,13 @@ def automatizacao_web():
             for m, t in automatizacao_nova:
                 atual_automatizado = ani
                 modo_global = m
-                for _ in range(60):
-                    sleep(m)
+                for _ in range(t):
+                    sleep(1)
                     if automatizacao_nova != automatizacao:
                         break
                 ani += 1
         modo_auto = False
-        sleep(3)
+        sleep(1)
 
 def tela_web():
     sleep(10)
@@ -57,7 +63,7 @@ def tela_web():
     global modo_global, ip_global, net_global, temperatura_global_1, temperatura_global_2, freq_global, pot_global, limite, automatizado, atual_automatizado, memorias, memoria_uso
 
     def pagina_web(): #Página da web
-        global html, modo_global, freq_global, temperatura_global_1, temperatura_global_2, temperatura_placa, gc, memorias, memoria_uso, acoes
+        global html, modo_global, freq_global, temperatura_global_1, temperatura_global_2, temperatura_placa, gc, memorias, memoria_uso, acoes, pot_global
         temperatura_placa = str((esp32.raw_temperature() - 32) * 5/9)
 
         atual_ = []
@@ -67,61 +73,64 @@ def tela_web():
 
         acoes = [f" <tr> <td>{i}</td> <td>{x[0]}</td> <td>{x[1]}</td> <td>a</td> </tr> " for i, x, a in zip([i+1 for i in range(len(automatizado))], automatizado, atual_)]
 
-        html = criar_html(modo_global, freq_global, temperatura_global_1, temperatura_global_2, temperatura_placa, gc, memorias, memoria_uso, acoes)
+        html = criar_html(modo_global, freq_global, temperatura_global_1, temperatura_global_2, temperatura_placa, gc, memorias, memoria_uso, acoes, pot_global)
 
         return html
 
     def logica_web(request): #Lógica para página na web
-        if request.find("\?MODO=") > 1:
-            pos = request.find("\?MODO=") + len("\?MODO=")
+        if request.find("MODO=") > 1:
+            pos = request.find("MODO=") + len("MODO=")
             num = request[pos:pos+1]
             print(f"Numero_da_altomatizacao: {num}")
             modo_global = f"modo_{num}"
 
         at = []
-        if request.find(f"\?automatizar=1") > 1:
+        if request.find(f"automatizar=1") > 1:
             for i in range(1, 5 + 1):
-                if request.find(f"\?modo{i}=off{i}") > 1:
-                    p = request.find(f"\?tempo{i}=")
-                    lp = len("\?tempo1=")
+                if request.find(f"modo{i}=off{i}") > 1:
+                    p = request.find(f"tempo{i}=")
+                    lp = len("tempo1=")
                     t = request[p + lp: p + lp + 4]
                     ft = ""
                     for i in t:
                         if ord("0") <= ord(i) <= ord("9"):
                             ft += i
-                    at.append(["modo_1", ft])
-                elif request.find(f"\?modo{i}=eco{i}") > 1:
-                    p = request.find(f"\?tempo{i}=")
-                    lp = len("\?tempo1=")
+                    at.append(["modo_1", int(ft)])
+                elif request.find(f"modo{i}=eco{i}") > 1:
+                    p = request.find(f"tempo{i}=")
+                    lp = len("tempo1=")
                     t = request[p + lp: p + lp + 4]
                     ft = ""
                     for i in t:
                         if ord("0") <= ord(i) <= ord("9"):
                             ft += i
-                    at.append(["modo_2", ft])
-                elif request.find(f"\?modo{i}=turbo{i}") > 1:
-                    p = request.find(f"\?tempo{i}=")
-                    lp = len("\?tempo1=")
+                    at.append(["modo_2", int(ft)])
+                elif request.find(f"modo{i}=turbo{i}") > 1:
+                    p = request.find(f"tempo{i}=")
+                    lp = len("tempo1=")
                     t = request[p + lp: p + lp + 4]
                     ft = ""
                     for i in t:
                         if ord("0") <= ord(i) <= ord("9"):
                             ft += i
-                    at.append(["modo_3", ft])
-                elif request.find(f"\?modo{i}=full{i}") > 1:
-                    p = request.find(f"\?tempo{i}=")
-                    lp = len("\?tempo1=")
+                    at.append(["modo_3", int(ft)])
+                elif request.find(f"modo{i}=full{i}") > 1:
+                    p = request.find(f"tempo{i}=")
+                    lp = len("tempo1=")
                     t = request[p + lp: p + lp + 4]
                     ft = ""
                     for i in t:
                         if ord("0") <= ord(i) <= ord("9"):
                             ft += i
-                    at.append(["modo_4", ft])
+                    at.append(["modo_4", int(ft)])
             automatizacao = at
-        print(f"Automatização:\n{at}\n")
-        globals()["automatizado"] = automatizacao
-                
+            print(f"Automatização:\n{at}\n")
+            globals()["automatizado"] = automatizacao
+
+    contagem_memoria = -1
     while True:
+        sleep(0.1)
+        
         print("Lendo memoria para site...")
         memorias["temperatura_1"].append(temperatura_global_1)
         memorias["temperatura_2"].append(temperatura_global_2)
@@ -130,13 +139,15 @@ def tela_web():
         memorias["frequencia"].append(freq_global)
 
         for k_m in memorias.keys():
-            if len(memorias[k_m]) > 100:
+            if len(memorias[k_m]) > 30:
                 memorias[k_m] = memorias[k_m][-100:]
 
         memoria_uso[modo_global] += 1
         
         if modo_global != "manual" and modo_global != "resfriar":
-            resp = net_global.open_web_page(pagina_web, logica_web)
+            if globals()["pode_conectar"]:
+                gc.collect()
+                resp = net_global.open_web_page(pagina_web, logica_web)
 
 def interface():
     global telapot, lcd, login_wifi, senha_wifi
@@ -146,8 +157,11 @@ def interface():
         nome_5_carac = modo_nome + " " * (5 - len(modo_nome))
         estat_antigo = f"{nome_5_carac} T1:{int(temperatura_global_1)}\nDUTY:{int(pot_global/1024*100 + 0.5)}% T2:{int(temperatura_global_2)}" 
         while True:
-            nome_5_carac = modo_nome + " " * (5 - len(modo_nome))
-            estat = f"{nome_5_carac} T1:{int(temperatura_global_1)}\nDUTY:{int(pot_global/1024*100 + 0.5)}% T2:{int(temperatura_global_2)}" 
+            try:
+                nome_5_carac = modo_nome + " " * (5 - len(modo_nome))
+                estat = f"{nome_5_carac} T1:{int(temperatura_global_1)}\nDUTY:{int(pot_global/1024*100 + 0.5)}% T2:{int(temperatura_global_2)}"
+            except TypeError:
+                print(f"Sem conversão para: {pot_global}")                
             if estat_antigo != estat:
                 lcd.clear()
                 lcd.putstr(estat)
@@ -156,14 +170,23 @@ def interface():
         lcd.clear()     
 
     wifi = Wifi(login_wifi, senha_wifi)
-    wifi.connect()
+    ip_teste = wifi.connect()
+    i = 0
+    while ip_teste == None and i < 4:
+        i += 1
+        sleep(1)
+        ip_teste = wifi.connect()
+        lcd.clear()
+        lcd.putstr(f"Conectando{'.'*i}")
+        
+    globals()["pode_conectar"] = True
     globals()["net_global"] = wifi
     globals()["ip_global"] = wifi.ip
 
     if ip_global != None:
         lcd.clear()
         lcd.putstr(f"IP: {ip_global}")
-        sleep(5)
+        sleep(3)
     iterar_estatisticas()
                 
 if __name__ == "__main__":
@@ -273,6 +296,7 @@ if __name__ == "__main__":
                 "temperatura_3":[],
                 "potencia":[],
                 "frequencia":[]}
+    pode_conectar = False
 
     print("Ligando os threads...")
     _thread.start_new_thread(interface,())
@@ -283,7 +307,7 @@ if __name__ == "__main__":
     lcd.putstr(f"[{'#'*10}{' '*0}]")
     
     #Loop principal:
-    contagem = 0
+    contagem = -1
 
     pwm.freq(432)
     while True:
@@ -311,7 +335,7 @@ if __name__ == "__main__":
 ##            temperatura = sensor_temperatura_1.read_temp(roms1[0])
             temperatura_de_seguranca = sensor_temperatura_2.read_temp(roms2[0])
 ##            temperatura_global_1 = temperatura
-            temperatura_global_1 = 25
+            temperatura_global_1 = 15
             temperatura_global_2 =  temperatura_de_seguranca
 
         if type(temperatura_global_1) == None:

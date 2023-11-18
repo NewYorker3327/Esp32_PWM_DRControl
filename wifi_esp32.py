@@ -58,10 +58,13 @@ class Wifi:
     def is_connected(self):
         return self.net.isconnected()
 
-    def open_web_page(self, page, logic, times = 1, args_page:dict = None, args_logic:dict = None):
+    def open_web_page(self, page, logic, times = 30, args_page:dict = None, args_logic:dict = None):
         """
         Open a web page using a socket and read the result after a certain time
         """
+        if self.ip == None:
+            print("Connect to wifi first...")
+            return None
         times_try = 0
         while not self.net.isconnected() and times_try < 3:
             print("Not connected to Wi-Fi...")
@@ -77,7 +80,7 @@ class Wifi:
             try:
                 soc = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                 soc.bind(('', 80))
-                soc.listen(5) #Max of listen
+                soc.listen(3) #Max of listen
                 connected_now = True
             except OSError:
                 print(f"Try open socket again...")
@@ -89,11 +92,7 @@ class Wifi:
             return False
 
         if self.net.isconnected():
-            while times > 0:
-                if gc.mem_free() < 102000:
-                    print("Clearing memory...")
-                    gc.collect()
-                
+            while times > 0:                
                 print(f"Remaining connections {times}...")
                 times -= 1
                 
@@ -126,24 +125,3 @@ class Wifi:
             return False
         
         return return_logic
-            
-if __name__ == "__main__":
-    def web_page(t):
-        html = """<html><head> <title>ESP Web Server</title> <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link rel="icon" href="data:,"> <style>html{font-family: Helvetica; display:inline-block; margin: 0px auto; text-align: center;}
-  h1{color: #0F3376; padding: 2vh;}p{font-size: 1.5rem;}.button{display: inline-block; background-color: #e7bd3b; border: none; 
-  border-radius: 4px; color: white; padding: 16px 40px; text-decoration: none; font-size: 30px; margin: 2px; cursor: pointer;}
-  .button2{background-color: #4286f4;}</style></head><body> <h1>ESP Web Server</h1> 
-  <p>GPIO state: <strong> """ + str(t) + """ /strong></p><p><a href="/?led=on"><button class="button">ON</button></a></p>
-  <p><a href="/?led=off"><button class="button button2">OFF</button></a></p></body></html>"""
-        return html
-    
-    def logic(text):
-        if text.find("led=on") > -1:
-            print(">>> LED IS 1")
-        if text.find("led=off") > -1:
-            print(">>> LED IS 0")
-    
-    wifi = Wifi("login", "senha")
-    wifi.connect()
-    deu = wifi.open_web_page(web_page, logic, args_page = {"t":"teste"})
