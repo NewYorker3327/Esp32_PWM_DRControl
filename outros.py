@@ -17,7 +17,7 @@ def tempo_h_m_s(segundos):
     segundos = segundos % 60
     return f"{horas} hora(s), {minutos} minuto(s) e {segundos} segundo(s)"
 
-def criar_html(modo_global, freq_global, temperatura_global_1, temperatura_global_2, temperatura_placa, gc, pot_global):
+def criar_html(modo_global, freq_global, temperatura_global_1, temperatura_global_2, temperatura_placa, gc, pot_global, memoria_uso):
     html = """
     <html>
         <meta charset="UTF-8">        
@@ -59,7 +59,7 @@ def criar_html(modo_global, freq_global, temperatura_global_1, temperatura_globa
                   <input type="number" id="tempo1" name="tempo1" min="1" max="4320" value="1"> <p>
 
                 <label for="modo2">Ação 2 MODO e TEMPO (em minutos):</label>
-                <select id="modo2" name="modo1">
+                <select id="modo2" name="modo2">
                 <option value="nada2" selected>NADA</option>
                     <option value="off2">OFF</option>
                     <option value="eco2">ECO</option>
@@ -69,7 +69,7 @@ def criar_html(modo_global, freq_global, temperatura_global_1, temperatura_globa
                   <input type="number" id="tempo2" name="tempo2" min="1" max="4320" value="1"> <p>
 
                 <label for="modo3">Ação 3 MODO e TEMPO (em minutos):</label>
-                <select id="modo3" name="modo1">
+                <select id="modo3" name="modo3">
                 <option value="nada3" selected>NADA</option>
                     <option value="off3">OFF</option>
                     <option value="eco3">ECO</option>
@@ -79,7 +79,7 @@ def criar_html(modo_global, freq_global, temperatura_global_1, temperatura_globa
                   <input type="number" id="tempo3" name="tempo3" min="1" max="4320" value="1"> <p>
 
                 <label for="modo4">Ação 4 MODO e TEMPO (em minutos):</label>
-                <select id="modo4" name="modo1">
+                <select id="modo4" name="modo4">
                 <option value="nada4" selected>NADA</option>
                     <option value="off4">OFF</option>
                     <option value="eco4">ECO</option>
@@ -89,7 +89,7 @@ def criar_html(modo_global, freq_global, temperatura_global_1, temperatura_globa
                   <input type="number" id="tempo4" name="tempo4" min="1" max="4320" value="1"> <p>
 
                 <label for="modo5">Ação 5 MODO e TEMPO (em minutos):</label>
-                <select id="modo5" name="modo1">
+                <select id="modo5" name="modo5">
                 <option value="nada5" selected>NADA</option>
                     <option value="off5">OFF</option>
                     <option value="eco5">ECO</option>

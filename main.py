@@ -31,30 +31,31 @@ from wifi_esp32 import Wifi
 
 def automatizacao_web():
     global automatizacao, modo_global, lcd, atual_automatizado
-    sleep(5)
-
-    while True:
-        if "automatizacao" in globals():
-            break
-        sleep(0.5)      
+    sleep(5)   
     
     while True:
-        automatizacao_nova = automatizacao
+        try:
+            automatizacao_nova = automatizacao
+        except NameError:
+            automatizacao = []
+            automatizacao_nova = []
         atual_automatizado = -1
+        print(f"Atual: {automatizacao}")
         if automatizacao != []:
-            modo_auto = True
+            globals()["modo_auto"] = True
             lcd.clear()
             lcd.putstr("MODO\nAUTOMATICO")
             ani = 0
             for m, t in automatizacao_nova:
+                print(f"{m}>>{t}{type(t)}")
                 atual_automatizado = ani
-                modo_global = m
+                globals()["modo_global"] = m
                 for _ in range(t):
                     sleep(1)
-                    if automatizacao_nova != automatizacao:
-                        break
                 ani += 1
-        modo_auto = False
+            automatizacao = []
+            automatizacao_nova = []
+        globals()["modo_auto"] = False
         sleep(1)
 
 def tela_web():
@@ -66,14 +67,14 @@ def tela_web():
         global tipo_html, modo_global, freq_global, temperatura_global_1, temperatura_global_2, temperatura_placa, gc, memorias, memoria_uso, acoes, pot_global
         temperatura_placa = str((esp32.raw_temperature() - 32) * 5/9)
 
-        atual_ = []
-        if atual_automatizado >= 0:
-            atual_ = [0 for i in range(len(automatizado))]
-            atual_[atual_automatizado] = 1
+##        atual_ = []
+##        if atual_automatizado >= 0:
+##            atual_ = [0 for i in range(len(automatizado))]
+##            atual_[atual_automatizado] = 1
 
         #Podem ser 2 htmls, o de automatização e o de gráfico:
         if tipo_html == "automatizacao":
-            html = criar_html(modo_global, freq_global, temperatura_global_1, temperatura_global_2, temperatura_placa, gc, pot_global)
+            html = criar_html(modo_global, freq_global, temperatura_global_1, temperatura_global_2, temperatura_placa, gc, pot_global, memoria_uso)
         elif tipo_html == "grafico":
             acoes = [f" <tr> <td>{i}</td> <td>{x[0]}</td> <td>{x[1]}</td> <td>a</td> </tr> " for i, x, a in zip([i+1 for i in range(len(automatizado))], automatizado, atual_)]
             html = criar_html_grafico(memorias, memoria_uso, acoes) 
@@ -82,7 +83,8 @@ def tela_web():
 
     def logica_web(request): #Lógica para página na web
         at = []
-        request = request.decode("utf-8")
+        #request = request[3:-2].decode("utf-8")
+        print(type(request), request[:10])
         if request.find(f"automatizar=1") > 1:
             for i in range(1, 5 + 1):
                 if request.find(f"modo{i}=off{i}") > 1:
@@ -121,9 +123,8 @@ def tela_web():
                         if ord("0") <= ord(i) <= ord("9"):
                             ft += i
                     at.append(["modo_4", int(ft)])
-            automatizacao = at
+            globals()["automatizacao"] = at
             print(f"Automatização:\n{at}\n")
-            globals()["automatizado"] = automatizacao
 
         elif request.find("MODO=") > 1:
             pos = request.find("MODO=") + len("MODO=")
@@ -153,25 +154,25 @@ def tela_web():
                 gc.collect()
                 resp = net_global.open_web_page(pagina_web, logica_web)
 
-def interface():
-    global telapot, lcd, login_wifi, senha_wifi
+def iterar_estatisticas():
+    global temperatura_global_1, temperatura_global_2, freq_global, pot_global, limite, ip_global, modo_nome
+    nome_5_carac = modo_nome + " " * (5 - len(modo_nome))
+    estat_antigo = f"{nome_5_carac} T1:{int(temperatura_global_1)}\nDUTY:{int(pot_global/1024*100 + 0.5)}% T2:{int(temperatura_global_2)}" 
+    while True:
+        try:
+            nome_5_carac = modo_nome + " " * (5 - len(modo_nome))
+            estat = f"{nome_5_carac} T1:{int(temperatura_global_1)}\nDUTY:{int(pot_global/1024*100 + 0.5)}% T2:{int(temperatura_global_2)}"
+        except TypeError:
+            print(f"Sem conversão para: {pot_global}")
+        if estat_antigo != estat:
+            lcd.clear()
+            lcd.putstr(estat)
+            estat_antigo = estat
+        sleep(0.2)
+    lcd.clear()  
 
-    def iterar_estatisticas():
-        global temperatura_global_1, temperatura_global_2, freq_global, pot_global, limite, ip_global, modo_nome
-        nome_5_carac = modo_nome + " " * (5 - len(modo_nome))
-        estat_antigo = f"{nome_5_carac} T1:{int(temperatura_global_1)}\nDUTY:{int(pot_global/1024*100 + 0.5)}% T2:{int(temperatura_global_2)}" 
-        while True:
-            try:
-                nome_5_carac = modo_nome + " " * (5 - len(modo_nome))
-                estat = f"{nome_5_carac} T1:{int(temperatura_global_1)}\nDUTY:{int(pot_global/1024*100 + 0.5)}% T2:{int(temperatura_global_2)}"
-            except TypeError:
-                print(f"Sem conversão para: {pot_global}")
-            if estat_antigo != estat:
-                lcd.clear()
-                lcd.putstr(estat)
-                estat_antigo = estat
-            sleep(0.2)
-        lcd.clear()     
+def interface():
+    global telapot, lcd, login_wifi, senha_wifi   
 
     wifi = Wifi(login_wifi, senha_wifi)
     ip_teste = wifi.connect()
@@ -190,8 +191,6 @@ def interface():
     if ip_global != None:
         lcd.clear()
         lcd.putstr(f"IP: {ip_global}")
-        sleep(3)
-    iterar_estatisticas()
                 
 if __name__ == "__main__":
 #   ____        __ _       _      /\/|               
@@ -255,8 +254,8 @@ if __name__ == "__main__":
 ##    roms1 = sensor_temperatura_1.scan()
 ##    temperatura = sensor_temperatura_1.read_temp(roms1[0])
 ##    print(f"Sensor de temperatura 1 ligado!\n")
-    lcd.clear()
-    lcd.putstr(f"[{'#'*8}{' '*2}]")
+##    lcd.clear()
+##    lcd.putstr(f"[{'#'*8}{' '*2}]")
 
     print("Ligando o sensor de temperatura 2 (PIN 16)")
     sensor_temperatura_2 = DS18X20(OneWire(Pin(16)))
@@ -305,8 +304,9 @@ if __name__ == "__main__":
 
     print("Ligando os threads...")
     _thread.start_new_thread(interface,())
+    _thread.start_new_thread(iterar_estatisticas,())
     _thread.start_new_thread(tela_web,())
-##    _thread.start_new_thread(automatizacao_web,())
+    _thread.start_new_thread(automatizacao_web,())
     print("Threads ligados!")
     lcd.clear()
     lcd.putstr(f"[{'#'*10}{' '*0}]")
@@ -320,7 +320,11 @@ if __name__ == "__main__":
 
         sensor = telapot.read()
 
-        pot_global = mudar(pot_global, pot_ideal)
+        if modo_auto:
+            pot_global = pot_ideal
+        else:
+            pot_global = mudar(pot_global, pot_ideal, n = 1)
+        
         pwm.duty(pot_global)
 
         if not modo_auto:
@@ -343,7 +347,7 @@ if __name__ == "__main__":
             temperatura_global_1 = 15
             temperatura_global_2 =  temperatura_de_seguranca
 
-        if type(temperatura_global_1) != int or type(temperatura_global_1) != float:
+        if type(temperatura_global_1) == None:
             for _ in range(3):
                 lcd.clear()
                 lcd.putstr("SENSOR 1\nDESCONECTADO!")
@@ -353,7 +357,7 @@ if __name__ == "__main__":
                 sleep(1)
             temperatura_de_seguranca = 61
 
-        if type(temperatura_global_2) != int or type(temperatura_global_2) != float:
+        if type(temperatura_global_2) == None:
             for _ in range(3):
                 lcd.clear()
                 lcd.putstr("SENSOR 2\nDESCONECTADO!")
@@ -368,21 +372,24 @@ if __name__ == "__main__":
             lcd.putstr("MODO AUTOMATICO")
             sleep(0.5)
 
-        if temperatura_de_seguranca > 60 or modo_global == "resfriar": #As vezes a variável (temp...) não é lida corretamente 
-            if modo_global != "resfriar":
-                backup_modo_global = modo_global
-                pwm.duty(0)
-                pot_global = 0
-                lcd.clear()
-                lcd.putstr("RESFRIANDO!")
+        try:
+            if temperatura_de_seguranca > 60 or modo_global == "resfriar": #As vezes a variável (temp...) não é lida corretamente 
+                if modo_global != "resfriar":
+                    backup_modo_global = modo_global
+                    pwm.duty(0)
+                    pot_global = 0
+                    lcd.clear()
+                    lcd.putstr("RESFRIANDO!")
+                    modo_global = "resfriar"
+                    modo_atual = modo_global
+                    sleep(3)
+
                 modo_global = "resfriar"
-                modo_atual = modo_global
-                sleep(3)
 
-            modo_global = "resfriar"
-
-            if temperatura_de_seguranca < 40:
-                modo_global = backup_modo_global
+                if temperatura_de_seguranca < 40:
+                    modo_global = backup_modo_global
+        except TypeError:
+            pass
 
         if not modo_global == "resfriar":
             if modo_global == "modo_1" and modo_atual != modo_global:
