@@ -11,7 +11,7 @@ class Wifi:
     """
     Class to connect esp32 to wifi
     """
-    def __init__(self, login, password):
+    def __init__(self, login, password, ips:tuple = ("192.168.0.100", "255.255.255.0", "192.168.10.1", "8.8.8.8")):
         """
         Starts with login and password
         """
@@ -22,23 +22,32 @@ class Wifi:
         if type(password) != list:
             password = [password]
         self.password = password
-        self.ifconfig = ("192.168.0.100", "255.255.255.0", "192.168.10.1", "8.8.8.8")
+        self.ifconfig = ips
         self.net.active(False)
         self.ip = None
+        self.config = None
 
     def connect(self):
         """
         Try connecting to wifi
         """
         print("Connecting...")
+        sleep(0.5)
         if not self.net.isconnected():
             self.net.active(True)
             self.net.ifconfig(self.ifconfig)
             for login_wifi in self.login:
                 for password_wifi in self.password:
                     print(f"Try: {login_wifi} {password_wifi}")
-                    self.net.connect(login_wifi, password_wifi)
-                    sleep(0.1)
+                    tryes_connect = 3
+                    while tryes_connect > 0:
+                        try:
+                            self.net.connect(login_wifi, password_wifi)
+                            tryes_connect = 0
+                        except:
+                            print("Try to connect again...")
+                            tryes_connect -= 1
+                        sleep(0.5)
                     if self.net.isconnected():
                         self.ip = self.net.ifconfig()[0]
                         self.config = self.net.ifconfig()
