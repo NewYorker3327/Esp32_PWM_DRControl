@@ -17,26 +17,13 @@ def tempo_h_m_s(segundos):
     segundos = segundos % 60
     return f"{horas} hora(s), {minutos} minuto(s) e {segundos} segundo(s)"
 
-def criar_html(modo_global, freq_global, temperatura_global_1, temperatura_global_2, temperatura_placa, gc, memorias, memoria_uso, acoes, pot_global):
+def criar_html(modo_global, freq_global, temperatura_global_1, temperatura_global_2, temperatura_placa, gc, pot_global):
     html = """
     <html>
-        <meta charset="UTF-8">
-               
+        <meta charset="UTF-8">        
         <head>   
             <meta content="width=device-width, initial-scale=1" name="viewport"></meta>   
         </head>
-
-        <style>
-        table, th, td {
-          border: 1px solid black;
-        }        
-
-        @media screen and (max-width: 900px) {
-            .grafico-container {
-                flex-basis: 100%; /* Uma coluna em telas menores */
-            }
-        }
-        </style>
 
         <body>
             <center><p>Ligado a <strong>""" + tempo_h_m_s(sum(memoria_uso.values()) * 10) + """</strong>.</p></center>
@@ -53,11 +40,10 @@ def criar_html(modo_global, freq_global, temperatura_global_1, temperatura_globa
             <center><p>Frequência: <strong>""" + str(freq_global) + """</strong>.</p></center>
             <center><p>Potência: <strong>""" + str(int(pot_global/1024*100 + 0.5)) + """</strong>.</p></center>
             <center><p>Temperatura saída: <strong>""" + str(temperatura_global_1) + """</strong>.</p></center>
-            <center><p>Temperatura da Placa: <strong>""" + str(temperatura_global_2) + """</strong>.</p></center>          
+            <center><p>Temperatura da Placa: <strong>""" + str(temperatura_global_2) + """</strong>.</p></center>
             <center><p>Temperatura do Processador: <strong>""" + str(temperatura_placa) + """</strong>.</p></center>
             <center><p>Memória usada (kb): <strong>""" + str((512*1024 - gc.mem_alloc())/1024)[:6] + """/""" + str(512) + """</strong>.</p></center>
             <br>
-
             <form>
                 <input type="checkbox" id="automatizar" name="automatizar" value="1">
                 <label for="vehicle1">Rodar automatização definida abaixo</label><br>
@@ -114,9 +100,49 @@ def criar_html(modo_global, freq_global, temperatura_global_1, temperatura_globa
 
             <button type="submit">Salvar</button>
             </form>
+        </body>   
+        </html>"""
+    return html
 
-            <br>
-            
+def criar_html_grafico(memorias, memoria_uso, acoes):
+    html = """
+    <html>
+        <meta charset="UTF-8">
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.4/Chart.js"></script>
+        
+        <head>   
+            <meta content="width=device-width, initial-scale=1" name="viewport"></meta>   
+        </head>
+
+        <style>
+        table, th, td {
+          border: 1px solid black;
+        }
+
+        .grafico-par {
+            display: flex;
+            flex-wrap: wrap;
+        }
+
+        .grafico-container {
+            flex-basis: calc(50% - 20px); /* Divide em duas colunas com espaço entre elas */
+            padding: 10px;
+            box-sizing: border-box;
+        }
+
+        .grafico {
+            width: 100%;
+            max-width: 100%;
+        }
+
+        @media screen and (max-width: 900px) {
+            .grafico-container {
+                flex-basis: 100%; /* Uma coluna em telas menores */
+            }
+        }
+        </style>
+
+        <body>           
             <h2>Automazização Atual:</h2>
             <table style="width:100%">
               <tr>
@@ -126,7 +152,6 @@ def criar_html(modo_global, freq_global, temperatura_global_1, temperatura_globa
                 <th>Ativa no Momento</th>
               </tr>""" + str(acoes) + """
             </table>
-
 
             <div class="grafico-par">
                 <div class="grafico-container">
@@ -146,7 +171,119 @@ def criar_html(modo_global, freq_global, temperatura_global_1, temperatura_globa
                 </div>
             </div>
 
-     
+            <script>
+            const xValues = """ + str([i * -10 for i in range(len(memorias["temperatura_1"]))]) + """;
+
+            new Chart("graficotemperatura", {
+              type: "line",
+              data: {
+                labels: xValues,
+                datasets: [{ 
+                  data: """ + str(memorias["temperatura_1"]) + """,
+                  borderColor: "blue",
+                  fill: false,
+                  label: "Saída" // Adicione o nome da série A aqui
+                }, { 
+                  data: """ + str(memorias["temperatura_2"]) + """,
+                  borderColor: "green",
+                  fill: false,
+                  label: "Hardware" // Adicione o nome da série B aqui
+                }, { 
+                  data: """ + str(memorias["temperatura_3"]) + """,
+                  borderColor: "red",
+                  fill: false,
+                  label: "Controlador"
+                }]
+              },
+              options: {
+                title: { 
+                  display: true,
+                  text: 'Temperaturas'
+                },
+                legend: {
+                  display: true,
+                  position: 'top',
+                }
+              }
+            });
+
+
+            new Chart("graficopotencia", {
+              type: "line",
+              data: {
+                labels: xValues,
+                datasets: [{ 
+                  data: """ + str(memorias["potencia"]) + """,
+                  borderColor: "red",
+                  fill: false,
+                  label: "Potência"
+                }]
+              },
+              options: {
+                title: { 
+                  display: true,
+                  text: 'Potência'
+                },
+                legend: {
+                  display: false,
+                  position: 'top',
+                }
+              }
+            });
+
+
+            new Chart("graficofrequencia", {
+              type: "line",
+              data: {
+                labels: xValues,
+                datasets: [{ 
+                  data: """ + str(memorias["frequencia"]) + """,
+                  borderColor: "red",
+                  fill: false,
+                  label: "Frequência"
+                }]
+              },
+              options: {
+                title: { 
+                  display: true,
+                  text: 'Frequência'
+                },
+                legend: {
+                  display: false,
+                  position: 'top',
+                }
+              }
+            });
+
+
+            const xValues2 = ["OFF", "ECO", "TURBO", "FULL", "PROGRAMADO", "RESFRIAR"];
+            const yValues = """ + str(memoria_uso.values()) + """;
+            const barColors = [
+              "#808080",
+              "#8ae580",
+              "#e95151",
+              "#feec35",
+              "#16aeae"
+            ];
+
+            new Chart("myChart", {
+              type: "pie",
+              data: {
+                labels: xValues2,
+                datasets: [{
+                  backgroundColor: barColors,
+                  data: yValues
+                }]
+              },
+              options: {
+                title: {
+                  display: true,
+                  text: "Frequência de uso dos Modos (nos últimos """ + str(sum(memoria_uso.values()) * 10) + """ segundos)"
+                }
+              }
+            });
+
+            </script>
     
         </body>   
         </html>"""
