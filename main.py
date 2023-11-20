@@ -1,7 +1,7 @@
 #Bibliotecas:
 from time import sleep, time
 from machine import Pin, PWM, ADC
-from machine import SoftI2C as 	I2C
+from machine import SoftI2C as I2C
 import dht
 import _thread
 from math import log2
@@ -28,6 +28,7 @@ from gc import mem_free, collect
 from outros import mudar, tempo_h_m_s, criar_html
 from login_wifi import login_wifi, senha_wifi
 from wifi_esp32 import Wifi
+from ws2812b_hub import Leds, color
 
 def automatizacao_web():
     global automatizacao, modo_global, lcd, atual_automatizado
@@ -56,7 +57,7 @@ def automatizacao_web():
             automatizacao = []
             automatizacao_nova = []
         globals()["modo_auto"] = False
-        sleep(1)
+        sleep(2)
 
 def tela_web():
     sleep(10)
@@ -134,7 +135,7 @@ def tela_web():
 
     contagem_memoria = -1
     while True:
-        sleep(0.1)
+        sleep(0.5)
         
         print("Lendo memoria para site...")
         memorias["temperatura_1"].append(temperatura_global_1)
@@ -155,19 +156,20 @@ def tela_web():
                 resp = net_global.open_web_page(pagina_web, logica_web)
 
 def iterar_estatisticas():
-    global temperatura_global_1, temperatura_global_2, freq_global, pot_global, limite, ip_global, modo_nome
+    global temperatura_global_1, temperatura_global_2, freq_global, pot_global, limite, ip_global, modo_nome, modo_global
     nome_5_carac = modo_nome + " " * (5 - len(modo_nome))
-    estat_antigo = f"{nome_5_carac} T1:{int(temperatura_global_1)}\nDUTY:{int(pot_global/1024*100 + 0.5)}% T2:{int(temperatura_global_2)}" 
+    estat = f"{nome_5_carac}    T1:{int(temperatura_global_1)}  DUTY:{int(pot_global/1024*100 + 0.5):02d}% T2:{int(temperatura_global_2)}"
     while True:
-        try:
-            nome_5_carac = modo_nome + " " * (5 - len(modo_nome))
-            estat = f"{nome_5_carac} T1:{int(temperatura_global_1)}\nDUTY:{int(pot_global/1024*100 + 0.5)}% T2:{int(temperatura_global_2)}"
-        except TypeError:
-            print(f"Sem conversão para: {pot_global}")
-        if estat_antigo != estat:
-            lcd.clear()
-            lcd.putstr(estat)
-            estat_antigo = estat
+        if modo_global != "resfriar":
+            try:
+                nome_5_carac = modo_nome + " " * (5 - len(modo_nome))
+                estat = f"{nome_5_carac}    T1:{int(temperatura_global_1)}  DUTY:{int(pot_global/1024*100 + 0.5):02d}% T2:{int(temperatura_global_2)}"
+            except TypeError:
+                print(f"Sem conversão para: {pot_global}")
+            if estat_antigo != estat:
+                lcd.clear()
+                lcd.putstr(estat)
+                estat_antigo = estat
         sleep(0.2)
     lcd.clear()  
 
@@ -177,12 +179,14 @@ def interface():
     wifi = Wifi(login_wifi, senha_wifi)
     ip_teste = wifi.connect()
     i = 0
+    led.animation("wait", color["red"])
     while ip_teste == None and i < 4:
         i += 1
         sleep(1)
         ip_teste = wifi.connect()
         lcd.clear()
         lcd.putstr(f"Conectando{'.'*i}")
+        led.animation("wait", color["red"])
         
     globals()["pode_conectar"] = True
     globals()["net_global"] = wifi
@@ -202,16 +206,20 @@ if __name__ == "__main__":
     ###Variável limite duty (1~40%):
     limite = 0.35
 
+    print("Ligando os leds (PIN 14)")
+    led = Leds(door = 14, width = 32)
+    led.animation("load", value = 5)
+
     #Para o visor:
     print("Ligando o visor (PIN 21 e 22)...")
     pino_visor_1, pino_visor_2 = 22, 21
     DEFALT_I2C_ADDR = 0x27
-
     i2c = I2C(scl = Pin(pino_visor_1), sda = Pin(pino_visor_2), freq = 10000)
     lcd = I2cLcd(i2c, DEFALT_I2C_ADDR, 2, 16)
     lcd.clear()
     print("Visor ligado!\n")
     lcd.putstr(f"[{'#'*0}{' '*10}]")
+    led.animation("load", value = 10)
 
     print("Ligando PWM (PIN 12)...")
     ###Saídas: 
@@ -221,6 +229,7 @@ if __name__ == "__main__":
     print("PWM ligado!\n")
     lcd.clear()
     lcd.putstr(f"[{'#'*2}{' '*8}]")
+    led.animation("load", value = 15)
   
     #Como temos que mandar alguns volts ou saidas 0, 1 pelas portas fazemos:
     print("Ligando saida serial (PIN 13)...")
@@ -231,13 +240,16 @@ if __name__ == "__main__":
     print("Saída serial ligada!\n")
     lcd.clear()
     lcd.putstr(f"[{'#'*4}{' '*6}]")
+    led.animation("load", value = 20)
 
     ###Entradas:
     print("Ligando potenciometro (PIN 32)...")
     telapot = ADC(Pin(32))
+    telapot.atten(ADC.ATTN_11DB)
     print(f"Potenciometro ligado, pos: {telapot.read()}!\n")
     lcd.clear()
     lcd.putstr(f"[{'#'*6}{' '*4}]")
+    led.animation("load", value = 25)
 
     ###Parte para funções de curvas:
     potValue1 = 0
@@ -256,6 +268,7 @@ if __name__ == "__main__":
 ##    print(f"Sensor de temperatura 1 ligado!\n")
 ##    lcd.clear()
 ##    lcd.putstr(f"[{'#'*8}{' '*2}]")
+    led.animation("load", value = 27)
 
     print("Ligando o sensor de temperatura 2 (PIN 16)")
     sensor_temperatura_2 = DS18X20(OneWire(Pin(16)))
@@ -264,6 +277,7 @@ if __name__ == "__main__":
     print(f"Sensor de temperatura 2 ligado!\n")
     lcd.clear()
     lcd.putstr(f"[{'#'*9}{' '*1}]")
+    led.animation("load", value = 30)
 
 #   _____                     _                  _           
 #  | ____|_  _____  ___ _   _| |_ __ _ _ __   __| | ___    _ 
@@ -302,6 +316,8 @@ if __name__ == "__main__":
     pode_conectar = False
     tipo_html = "automatizacao"
 
+    led.animation("load", value = 32)
+    
     print("Ligando os threads...")
     _thread.start_new_thread(interface,())
     _thread.start_new_thread(iterar_estatisticas,())
@@ -378,36 +394,63 @@ if __name__ == "__main__":
                     backup_modo_global = modo_global
                     pwm.duty(0)
                     pot_global = 0
-                    lcd.clear()
-                    lcd.putstr("RESFRIANDO!")
-                    modo_global = "resfriar"
                     modo_atual = modo_global
-                    sleep(3)
+                    modo_global = "resfriar"
 
+                lcd.clear()                    
+                lcd.putstr("RESFRIANDO!")
+                sleep(3)
+                    
                 modo_global = "resfriar"
 
-                if temperatura_de_seguranca < 40:
+                sensor_temperatura_2.convert_temp()
+                if sensor_temperatura_2.read_temp(roms2[0]) < 40:
                     modo_global = backup_modo_global
+                    temperatura_de_seguranca = sensor_temperatura_2.read_temp(roms2[0])
+                    temperatura_global_2 = temperatura_de_seguranca
         except TypeError:
             pass
 
         if not modo_global == "resfriar":
             if modo_global == "modo_1" and modo_atual != modo_global:
+                for i in range(31):
+                    led.draw_in(i, [20, 10, 10])
+                    sleep(0.01)
                 pot_ideal = 0
                 modo_atual = modo_global
                 modo_nome = "OFF"
                 
             elif modo_global == "modo_2" and modo_atual != modo_global:
+                for i in range(31):
+                    led.draw_in(i, color["green"])
+                    sleep(0.01)
                 pot_ideal = int(4096/400*12)
                 modo_atual = modo_global
                 modo_nome = "ECO"
 
             elif modo_global == "modo_3" and modo_atual != modo_global:
+                for i in range(31):
+                    led.draw_in(i, color["blue"])
+                    sleep(0.01)
                 pot_ideal = int(4096/400*32)
                 modo_atual = modo_global
                 modo_nome = "TURBO"
 
             elif modo_global == "modo_4" and modo_atual != modo_global:
+                for i in range(31):
+                    led.draw_in(i, color["blueviolet"])
+                    sleep(0.01)
                 pot_ideal = int(4096/400*40)           
                 modo_atual = modo_global
-                modo_nome = "FULL"         
+                modo_nome = "FULL"
+
+        else:
+            sensor_temperatura_2.convert_temp()
+            temporario = sensor_temperatura_2.read_temp(roms2[0])
+            print(f"Modo Resfriar {temporario} {type(temporario)}")
+            if type(temporario) == float:
+                for i in range(31):
+                    led.leds[i] = [0, 60, 255]
+                for i in range(min(31, (temporario-39))):
+                    led.leds[i] = color["fire"]
+                led.leds.write()
