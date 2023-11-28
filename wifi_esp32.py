@@ -5,7 +5,7 @@ Connect to WiFi
 import socket
 import network
 import gc
-from time import sleep
+from time import sleep, time
 
 class Wifi:
     """
@@ -26,6 +26,33 @@ class Wifi:
         self.net.active(False)
         self.ip = None
         self.config = None
+
+    def connect_continuos(self):
+        """
+        In https://docs.micropython.org/en/latest/esp32/quickref.html
+        Keeps looping until connected
+        """
+        self.net.active(True)
+        while True:
+            if not self.net.isconnected():
+                for login_wifi in self.login:
+                    t0 = time()
+                    for password_wifi in self.password:
+                        print(f"Connecting to {login_wifi}...")
+                        self.net.connect(login_wifi, password_wifi)
+                        while not self.net.isconnected() and time() - t0 < 10:
+                            sleep(0.1)
+                        if self.net.isconnected():
+                            print(f"Network config: {self.net.ifconfig()} in {login_wifi}")
+                            self.ip = self.net.ifconfig()[0]
+                            self.config = self.net.ifconfig()
+                            print(f"{'-'*10}CONFIG{'-'*10}")
+                            for line in self.config:
+                                print(line)
+                            return self.net.ifconfig()
+            self.net.active(False)
+            sleep(1)
+            self.net.active(True)
 
     def connect(self):
         """
@@ -89,7 +116,7 @@ class Wifi:
             try:
                 soc = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                 soc.bind(('', 80))
-                soc.listen(3) #Max of listen
+                soc.listen(5) #Max of listen
                 connected_now = True
             except OSError:
                 print(f"Try open socket again...")
@@ -108,8 +135,12 @@ class Wifi:
                 conn, addr = soc.accept()
                 print(f"Connecting with {addr}")
                 print("Receiving...")
-                request = conn.recv(1024)
-                print(f"{'-'*10}\nContent {request}\n{'-'*10}")
+                try:
+                    request = conn.recv(512)
+                    print(f"{'-'*10}\nContent {request}\n{'-'*10}")
+                except OSError:
+                    print(f"Error in request...")
+                    request = None
 
                 if args_logic != None:
                     return_logic = logic(str(request), **args_logic)
