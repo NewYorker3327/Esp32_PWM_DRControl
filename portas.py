@@ -16,3 +16,4 @@ temperatura_maxima_aceitavel = 60
 tempetatura_de_volta = 40
 
 inatividade_serial = 3
+margem = 30

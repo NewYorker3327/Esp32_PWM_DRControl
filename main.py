@@ -215,14 +215,12 @@ if __name__ == "__main__":
     pode_conectar = False
     ip_teste = False
     sensor = 0
-    toca_mus = True
     freq_global = 0
     pot_global = 0
     pot_ideal = 0
     modo_global = "off"
     modo_nome = "OFF"
     modo_atual = ""
-    pausa_de_seguranca = False
     net_global = None
     ip_global = None
     temperatura_global_1, temperatura_global_2 = 0, 0
@@ -349,13 +347,13 @@ if __name__ == "__main__":
         pwm.duty(pot_global)
 
         if not modo_auto:
-            if sensor < 4096/4:
+            if 0 < sensor < 4096/4 - margem:
                 modo_global = "modo_1"
-            elif sensor < 4096/2:
+            elif 4096/4 + margem < sensor < 4096/2 - margem:
                 modo_global = "modo_2"
-            elif sensor < 4096/4 * 3:
+            elif 4096/2 + margem < sensor < 4096/4 * 3 - margem:
                 modo_global = "modo_3"
-            else:
+            elif 4096/4 * 3 + margem < sensor < 4096:
                 modo_global = "modo_4"
         
         if contagem % 1000 == 0:
