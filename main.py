@@ -2,7 +2,7 @@
 from time import sleep, time
 from machine import Pin, PWM, ADC
 from machine import SoftI2C as I2C
-import dht
+#import process
 import _thread
 from math import log2
 
@@ -333,7 +333,7 @@ if __name__ == "__main__":
     #Loop principal:
     contagem = -1
 
-    pwm.freq(432)
+    pwm.freq(frequencia_base)
     while True:
         contagem += 1
 
@@ -364,7 +364,7 @@ if __name__ == "__main__":
             temperatura_de_seguranca = sensor_temperatura_2.read_temp(roms2[0])
 ##            temperatura_global_1 = temperatura
             temperatura_global_1 = 15
-            temperatura_global_2 =  temperatura_de_seguranca
+            temperatura_global_2 = temperatura_de_seguranca
 
         if type(temperatura_global_1) == None:
             for _ in range(3):
@@ -374,7 +374,7 @@ if __name__ == "__main__":
                 lcd.clear()
                 lcd.putstr("ENTRANDO\nMODO SEGURANCA")
                 sleep(1)
-            temperatura_de_seguranca = 61
+            temperatura_de_seguranca = temperatura_maxima_aceitavel + 1
 
         if type(temperatura_global_2) == None:
             for _ in range(3):
@@ -384,7 +384,7 @@ if __name__ == "__main__":
                 lcd.clear()
                 lcd.putstr("ENTRANDO\nMODO SEGURANCA")
                 sleep(1)
-            temperatura_de_seguranca = 61
+            temperatura_de_seguranca = temperatura_maxima_aceitavel + 1
 
         if modo_auto:
             lcd.clear()

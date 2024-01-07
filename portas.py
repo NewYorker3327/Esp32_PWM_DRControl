@@ -8,6 +8,7 @@ pino_potenciometro = 32
 pino_temperatura_1 = 5
 pino_temperatura_2 = 16
 
+frequencia_base = 432
 porcentagem_modo_2 = 12
 porcentagem_modo_3 = 32
 porcentagem_modo_4 = 40
@@ -17,3 +18,4 @@ tempetatura_de_volta = 40
 
 inatividade_serial = 3
 margem = 30
+espera = 1
